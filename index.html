@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دفتر الفواتير</title>
+    <style>
+        body {
+            font-family: 'Tahoma', sans-serif;
+            background-color: #f4f7fc;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+
+        .filters {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
+
+        .filters h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+
+        .filter-group {
+            margin-bottom: 15px;
+            position: relative;
+            /* Needed for autocomplete */
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .filter-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .filter-group button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .filter-group button:hover {
+            background-color: #0056b3;
+        }
+
+        .results {
+            flex-grow: 1;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #resultsTable {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        #resultsTable th,
+        #resultsTable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: right;
+        }
+
+        #resultsTable th {
+            background-color: #e9ecef;
+            color: #333;
+        }
+
+        #resultsTable tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        #no-results {
+            text-align: center;
+            color: #777;
+            padding: 20px;
+        }
+
+        /* --- NEW STYLES --- */
+        .date-presets {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .date-presets button {
+            font-size: 12px;
+            padding: 4px 8px;
+            background-color: #6c757d;
+            border-radius: 10px;
+            flex-grow: 1;
+        }
+
+        .autocomplete-suggestions {
+            position: absolute;
+            border: 1px solid #ddd;
+            border-top: none;
+            z-index: 99;
+            top: 100%;
+            left: 0;
+            right: 0;
+            max-height: 150px;
+            overflow-y: auto;
+            background: white;
+        }
+
+        .autocomplete-suggestions div {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+
+        .autocomplete-suggestions div:hover {
+            background-color: #f0f0f0;
+        }
+
+        /* --- END NEW STYLES --- */
+    </style>
+</head>
+
+<body>
+
+    <h1>دفتر الفواتير</h1>
+
+    <div class="container">
+        <div class="filters">
+            <form id="filterForm">
+                <h3>معايير البحث</h3>
+                <div class="filter-group">
+                    <label for="date_from">التاريخ من</label>
+                    <input type="date" id="date_from" name="date_from">
+                </div>
+                <div class="filter-group">
+                    <label for="date_to">التاريخ إلى</label>
+                    <input type="date" id="date_to" name="date_to">
+                    <div class="date-presets">
+                        <button type="button" id="btnToday">اليوم</button>
+                        <button type="button" id="btnThisWeek">هذا الأسبوع</button>
+                        <button type="button" id="btnThisMonth">هذا الشهر</button>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label for="doc_number">رقم الفاتورة</label>
+                    <input type="text" id="doc_number" name="doc_number" placeholder="أدخل رقم الفاتورة...">
+                </div>
+                <div class="filter-group">
+                    <label for="employee_name">الموظف</label>
+                    <input type="text" id="employee_name" name="employee_name" placeholder="أدخل اسم الموظف..."
+                        autocomplete="off">
+                    <div class="autocomplete-suggestions" id="employee_suggestions"></div>
+                </div>
+                <div class="filter-group">
+                    <label for="customer_name">العميل</label>
+                    <input type="text" id="customer_name" name="customer_name" placeholder="أدخل اسم العميل..."
+                        autocomplete="off">
+                    <div class="autocomplete-suggestions" id="customer_suggestions"></div>
+                </div>
+                <div class="filter-group">
+                    <button type="submit">بحث 🔎</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="results">
+            <table id="resultsTable">
+                <thead>
+                    <tr>
+                        <th>رقم الفاتورة</th>
+                        <th>تاريخ الإنشاء</th>
+                        <th>الموظف</th>
+                        <th>العميل</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <div id="no-results" style="display: none;">لا توجد نتائج تطابق معايير البحث.</div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
