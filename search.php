@@ -20,6 +20,13 @@ $results_per_page = 16;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($page - 1) * $results_per_page;
 
+// NEW: Securely handle sorting parameters
+$sort_by_allowed = ['invoice_create_date', 'invoice_total']; // Whitelist of allowed columns
+$sort_order_allowed = ['ASC', 'DESC']; // Whitelist of allowed directions
+
+$sort_by = isset($_GET['sort_by']) && in_array($_GET['sort_by'], $sort_by_allowed) ? $_GET['sort_by'] : 'invoice_create_date';
+$sort_order = isset($_GET['sort_order']) && in_array(strtoupper($_GET['sort_order']), $sort_order_allowed) ? strtoupper($_GET['sort_order']) : 'DESC';
+
 // --- BUILD THE SQL WHERE CLAUSE ---
 $base_sql_from = "FROM 
                     invoice AS inv
@@ -82,10 +89,12 @@ $stmt_count->close();
 $invoices_sql = "SELECT 
                     inv.invoice_number, 
                     inv.invoice_create_date, 
+                    inv.invoice_total, -- ADDED: Select the invoice total
                     usr.user_name AS employee_name,
                     cust.customer_name "
     . $base_sql_from . $where_clause .
-    " ORDER BY inv.invoice_create_date DESC LIMIT ? OFFSET ?";
+    " ORDER BY " . $sort_by . " " . $sort_order . // NEW: Use dynamic sorting
+    " LIMIT ? OFFSET ?";
 
 // Add LIMIT and OFFSET params to the list
 $params[] = $results_per_page;

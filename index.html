@@ -11,6 +11,27 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
+        /* Add these to your existing CSS */
+        #resultsTable th[data-sort] {
+            cursor: pointer;
+            position: relative;
+            padding-left: 25px;
+            /* Make space for the icon */
+        }
+
+        #resultsTable th[data-sort]:hover {
+            background-color: #e9ecef;
+        }
+
+        .sort-icon {
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2em;
+            color: var(--subtle-text-color);
+        }
+
         /* Add this to your existing CSS */
         .pagination .ellipsis {
             padding: 8px 12px;
@@ -303,6 +324,7 @@
                     <tr>
                         <th>رقم الفاتورة</th>
                         <th>تاريخ الإنشاء</th>
+                        <th data-sort="invoice_total">المبلغ الإجمالي <span class="sort-icon"></span></th>
                         <th>الموظف</th>
                         <th>العميل</th>
                     </tr>

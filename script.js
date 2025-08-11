@@ -1,7 +1,9 @@
 document.addEventListener('DOMContentLoaded', function () {
     // --- STATE & ELEMENT SELECTORS ---
     let currentPage = 1;
-    const resultsPerPage = 16;
+    const resultsPerPage = 20;
+    let currentSortBy = 'invoice_create_date'; // Default sort column
+    let currentSortOrder = 'DESC'; // Default sort order
 
     const filterForm = document.getElementById('filterForm');
     const tableBody = document.querySelector('#resultsTable tbody');
@@ -30,11 +32,12 @@ document.addEventListener('DOMContentLoaded', function () {
         const formData = new FormData(filterForm);
         const queryString = new URLSearchParams(formData).toString();
 
-        fetch(`search.php?${queryString}&page=${currentPage}`)
+        fetch(`search.php?${queryString}&page=${currentPage}&sort_by=${currentSortBy}&sort_order=${currentSortOrder}`)
             .then(response => response.json())
             .then(data => {
                 populateTable(data.invoices);
                 setupPagination(data.total_count);
+                updateSortIcons(); // Update icons after search
             })
             .catch(error => {
                 console.error('Error fetching data:', error);
@@ -49,10 +52,13 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             noResultsDiv.style.display = 'none';
             invoices.forEach(doc => {
+                // ADDED: Format the invoice total as currency
+                const formattedTotal = new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(doc.invoice_total || 0);
+
                 const row = `<tr>
                     <td>${doc.invoice_number || ''}</td>
                     <td>${doc.invoice_create_date || ''}</td>
-                    <td>${doc.employee_name || 'N/A'}</td>
+                    <td>${formattedTotal}</td> <td>${doc.employee_name || 'N/A'}</td>
                     <td>${doc.customer_name || 'N/A'}</td>
                 </tr>`;
                 tableBody.innerHTML += row;
@@ -203,4 +209,32 @@ document.addEventListener('DOMContentLoaded', function () {
             customerSuggestions.innerHTML = '';
         }
     });
+
+    // --- NEW: SORTING LOGIC ---
+    document.querySelectorAll('#resultsTable th[data-sort]').forEach(header => {
+        header.addEventListener('click', () => {
+            const sortBy = header.getAttribute('data-sort');
+            if (sortBy === currentSortBy) {
+                // If it's the same column, reverse the order
+                currentSortOrder = currentSortOrder === 'DESC' ? 'ASC' : 'DESC';
+            } else {
+                // If it's a new column, set it and default to descending
+                currentSortBy = sortBy;
+                currentSortOrder = 'DESC';
+            }
+            currentPage = 1; // Go back to the first page
+            performSearch();
+        });
+    });
+
+    function updateSortIcons() {
+        document.querySelectorAll('#resultsTable th[data-sort]').forEach(header => {
+            const icon = header.querySelector('.sort-icon');
+            if (header.getAttribute('data-sort') === currentSortBy) {
+                icon.textContent = currentSortOrder === 'DESC' ? '▼' : '▲';
+            } else {
+                icon.textContent = ' '; // Clear icon for non-active columns
+            }
+        });
+    }
 });
