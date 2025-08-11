@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function () {
     // --- STATE & ELEMENT SELECTORS ---
     let currentPage = 1;
-    const resultsPerPage = 20;
+    const resultsPerPage = 17;
     let currentSortBy = 'invoice_create_date'; // Default sort column
     let currentSortOrder = 'DESC'; // Default sort order
 
@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const customerInput = document.getElementById('customer_name');
     const employeeSuggestions = document.getElementById('employee_suggestions');
     const customerSuggestions = document.getElementById('customer_suggestions');
+    const summaryBar = document.getElementById('summary-bar'); // Add this selector
 
     // --- MAIN SEARCH FORM LOGIC ---
     filterForm.addEventListener('submit', function (event) {
@@ -28,6 +29,7 @@ document.addEventListener('DOMContentLoaded', function () {
         tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">جاري البحث...</td></tr>';
         noResultsDiv.style.display = 'none';
         paginationControls.innerHTML = '';
+        summaryBar.innerHTML = ''; // Clear summary bar on new search
 
         const formData = new FormData(filterForm);
         const queryString = new URLSearchParams(formData).toString();
@@ -37,12 +39,29 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(data => {
                 populateTable(data.invoices);
                 setupPagination(data.total_count);
-                updateSortIcons(); // Update icons after search
+                // Call the updated summary function with both values
+                updateSummaryBar(data.total_sum, data.total_count);
             })
             .catch(error => {
                 console.error('Error fetching data:', error);
                 tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color: red;">حدث خطأ أثناء جلب البيانات.</td></tr>';
             });
+    }
+    // --- NEW: SUMMARY BAR UPDATE FUNCTION ---
+    function updateSummaryBar(totalSum, totalCount) {
+        summaryBar.innerHTML = '';
+        if (totalCount === 0) return;
+
+        // Format the numbers
+        const formattedSum = new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(totalSum || 0);
+        const formattedCount = new Intl.NumberFormat('ar-EG').format(totalCount);
+
+        // Create the HTML structure
+        summaryBar.innerHTML = `
+        <span>إجمالي المبلغ: <strong>${formattedSum}</strong></span>
+        <span class="summary-divider">|</span>
+        <span>عدد الفواتير: <strong>${formattedCount}</strong></span>
+    `;
     }
 
     function populateTable(invoices) {

@@ -11,6 +11,30 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
+        /* Add this new CSS rule to your <style> block */
+        .summary-bar .summary-divider {
+            margin: 0 15px;
+            color: var(--border-color);
+        }
+
+        /* --- NEW SUMMARY BAR STYLES --- */
+        .summary-bar {
+            padding: 15px;
+            margin-top: 20px;
+            background-color: #f8f9fa;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.1em;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .summary-bar strong {
+            color: var(--accent-color);
+        }
+
+        /* --- END NEW STYLES --- */
         /* Add these to your existing CSS */
         #resultsTable th[data-sort] {
             cursor: pointer;
@@ -322,8 +346,8 @@
             <table id="resultsTable">
                 <thead>
                     <tr>
-                        <th>رقم الفاتورة</th>
-                        <th>تاريخ الإنشاء</th>
+                        <th data-sort="invoice_number">رقم الفاتورة <span class="sort-icon"></span></th>
+                        <th data-sort="invoice_create_date">تاريخ الإنشاء <span class="sort-icon"></span></th>
                         <th data-sort="invoice_total">المبلغ الإجمالي <span class="sort-icon"></span></th>
                         <th>الموظف</th>
                         <th>العميل</th>
@@ -332,6 +356,7 @@
                 <tbody></tbody>
             </table>
             <div id="no-results" style="display: none;">لا توجد نتائج تطابق معايير البحث.</div>
+            <div id="summary-bar" class="summary-bar"></div>
             <div id="pagination-controls" class="pagination"></div>
         </div>
     </div>

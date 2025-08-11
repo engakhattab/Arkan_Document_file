@@ -16,12 +16,12 @@ if ($conn->connect_error) {
 }
 
 // --- PAGINATION SETUP ---
-$results_per_page = 16;
+$results_per_page = 17;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($page - 1) * $results_per_page;
 
 // NEW: Securely handle sorting parameters
-$sort_by_allowed = ['invoice_create_date', 'invoice_total']; // Whitelist of allowed columns
+$sort_by_allowed = ['invoice_create_date', 'invoice_total', 'invoice_number']; // Added 'invoice_number'
 $sort_order_allowed = ['ASC', 'DESC']; // Whitelist of allowed directions
 
 $sort_by = isset($_GET['sort_by']) && in_array($_GET['sort_by'], $sort_by_allowed) ? $_GET['sort_by'] : 'invoice_create_date';
@@ -84,8 +84,18 @@ $stmt_count->execute();
 $total_count = $stmt_count->get_result()->fetch_assoc()['total'];
 $stmt_count->close();
 
+// --- NEW: QUERY 2: GET THE SUM OF TOTALS ---
+$sum_sql = "SELECT SUM(inv.invoice_total) AS total_sum " . $base_sql_from . $where_clause;
+$stmt_sum = $conn->prepare($sum_sql);
+if ($types) {
+    $stmt_sum->bind_param($types, ...$params);
+}
+$stmt_sum->execute();
+// Use ?? 0 to handle cases where there are no results, preventing a NULL value.
+$total_sum = $stmt_sum->get_result()->fetch_assoc()['total_sum'] ?? 0;
+$stmt_sum->close();
 
-// --- QUERY 2: GET THE INVOICES FOR THE CURRENT PAGE ---
+// --- QUERY 3: GET THE INVOICES FOR THE CURRENT PAGE ---
 $invoices_sql = "SELECT 
                     inv.invoice_number, 
                     inv.invoice_create_date, 
@@ -115,6 +125,7 @@ $conn->close();
 // --- RETURN THE FINAL JSON OBJECT ---
 $response = [
     'total_count' => $total_count,
+    'total_sum' => $total_sum, // Add the new total sum
     'invoices' => $invoices
 ];
 
