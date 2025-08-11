@@ -1,40 +1,54 @@
 document.addEventListener('DOMContentLoaded', function () {
-    // --- ELEMENT SELECTORS ---
+    // --- STATE & ELEMENT SELECTORS ---
+    let currentPage = 1;
+    const resultsPerPage = 16;
+
     const filterForm = document.getElementById('filterForm');
     const tableBody = document.querySelector('#resultsTable tbody');
     const noResultsDiv = document.getElementById('no-results');
+    const paginationControls = document.getElementById('pagination-controls');
     const dateFromInput = document.getElementById('date_from');
     const dateToInput = document.getElementById('date_to');
+    const employeeInput = document.getElementById('employee_name');
+    const customerInput = document.getElementById('customer_name');
+    const employeeSuggestions = document.getElementById('employee_suggestions');
+    const customerSuggestions = document.getElementById('customer_suggestions');
 
-    // --- MAIN SEARCH FORM ---
+    // --- MAIN SEARCH FORM LOGIC ---
     filterForm.addEventListener('submit', function (event) {
         event.preventDefault();
+        currentPage = 1; // Reset to page 1 for every new search
         performSearch();
     });
 
     function performSearch() {
+        tableBody.scrollIntoView({ behavior: 'smooth', block: 'start' });
         tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">جاري البحث...</td></tr>';
         noResultsDiv.style.display = 'none';
+        paginationControls.innerHTML = '';
 
         const formData = new FormData(filterForm);
         const queryString = new URLSearchParams(formData).toString();
 
-        fetch(`search.php?${queryString}`)
+        fetch(`search.php?${queryString}&page=${currentPage}`)
             .then(response => response.json())
-            .then(data => { populateTable(data); })
+            .then(data => {
+                populateTable(data.invoices);
+                setupPagination(data.total_count);
+            })
             .catch(error => {
                 console.error('Error fetching data:', error);
                 tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color: red;">حدث خطأ أثناء جلب البيانات.</td></tr>';
             });
     }
 
-    function populateTable(documents) {
+    function populateTable(invoices) {
         tableBody.innerHTML = '';
-        if (documents.length === 0 || documents.error) {
+        if (!invoices || invoices.length === 0) {
             noResultsDiv.style.display = 'block';
         } else {
             noResultsDiv.style.display = 'none';
-            documents.forEach(doc => {
+            invoices.forEach(doc => {
                 const row = `<tr>
                     <td>${doc.invoice_number || ''}</td>
                     <td>${doc.invoice_create_date || ''}</td>
@@ -46,25 +60,93 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function setupPagination(totalCount) {
+        paginationControls.innerHTML = '';
+        const totalPages = Math.ceil(totalCount / resultsPerPage);
+
+        if (totalPages <= 1) return;
+
+        // Helper function to create a page button
+        const createPageButton = (pageNumber) => {
+            const button = document.createElement('button');
+            button.textContent = pageNumber;
+            if (pageNumber === currentPage) {
+                button.classList.add('active');
+            }
+            button.addEventListener('click', () => {
+                currentPage = pageNumber;
+                performSearch();
+            });
+            return button;
+        };
+
+        // Helper function to create an ellipsis
+        const createEllipsis = () => {
+            const ellipsis = document.createElement('span');
+            ellipsis.className = 'ellipsis';
+            ellipsis.textContent = '...';
+            return ellipsis;
+        };
+
+        // "Previous" Button
+        const prevButton = document.createElement('button');
+        prevButton.textContent = 'السابق';
+        prevButton.disabled = (currentPage === 1);
+        prevButton.addEventListener('click', () => {
+            if (currentPage > 1) { currentPage--; performSearch(); }
+        });
+        paginationControls.appendChild(prevButton);
+
+        // Logic for creating page number buttons with ellipsis
+        if (totalPages <= 7) { // If 7 or fewer pages, show all
+            for (let i = 1; i <= totalPages; i++) {
+                paginationControls.appendChild(createPageButton(i));
+            }
+        } else { // If more than 7 pages, use ellipsis logic
+            const pageNumbersToShow = new Set();
+            pageNumbersToShow.add(1);
+            pageNumbersToShow.add(totalPages);
+            pageNumbersToShow.add(currentPage);
+            if (currentPage > 1) pageNumbersToShow.add(currentPage - 1);
+            if (currentPage < totalPages) pageNumbersToShow.add(currentPage + 1);
+
+            let lastPage = 0;
+            const sortedPages = Array.from(pageNumbersToShow).sort((a, b) => a - b);
+
+            for (const page of sortedPages) {
+                if (lastPage > 0 && page > lastPage + 1) {
+                    paginationControls.appendChild(createEllipsis());
+                }
+                paginationControls.appendChild(createPageButton(page));
+                lastPage = page;
+            }
+        }
+
+        // "Next" Button
+        const nextButton = document.createElement('button');
+        nextButton.textContent = 'التالي';
+        nextButton.disabled = (currentPage === totalPages);
+        nextButton.addEventListener('click', () => {
+            if (currentPage < totalPages) { currentPage++; performSearch(); }
+        });
+        paginationControls.appendChild(nextButton);
+    }
+
     // --- DATE PRESET LOGIC ---
     document.getElementById('btnToday').addEventListener('click', () => setDateRange('today'));
     document.getElementById('btnThisWeek').addEventListener('click', () => setDateRange('week'));
     document.getElementById('btnThisMonth').addEventListener('click', () => setDateRange('month'));
 
-    // This function replaces the old setDateRange function in script.js
     function setDateRange(period) {
         const today = new Date();
         let startDate = new Date();
 
-        if (period === 'today') {
-            // Start date is today
-        } else if (period === 'week') {
-            // CORRECTED: Logic for a week starting on Saturday
-            const dayOfWeek = today.getDay(); // Sunday is 0, Saturday is 6
+        if (period === 'today') { /* Start date is today */ }
+        else if (period === 'week') {
+            const dayOfWeek = today.getDay(); // Sunday=0, Monday=1, Saturday=6
             const daysToSubtract = (dayOfWeek + 1) % 7;
             startDate.setDate(today.getDate() - daysToSubtract);
         } else if (period === 'month') {
-            // Start date is the 1st of the month
             startDate.setDate(1);
         }
 
@@ -73,7 +155,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function formatDate(date) {
-        // Formats a date to "YYYY-MM-DD" for the input field
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
@@ -81,21 +162,14 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // --- AUTOCOMPLETE LOGIC ---
-    const employeeInput = document.getElementById('employee_name');
-    const customerInput = document.getElementById('customer_name');
-    const employeeSuggestions = document.getElementById('employee_suggestions');
-    const customerSuggestions = document.getElementById('customer_suggestions');
-
-    // Attach listeners
+    employeeInput.addEventListener('focus', () => getSuggestions('employee', employeeInput.value, employeeSuggestions));
     employeeInput.addEventListener('input', () => getSuggestions('employee', employeeInput.value, employeeSuggestions));
+    customerInput.addEventListener('focus', () => getSuggestions('customer', customerInput.value, customerSuggestions));
     customerInput.addEventListener('input', () => getSuggestions('customer', customerInput.value, customerSuggestions));
 
     let debounceTimer;
     function getSuggestions(type, term, suggestionsBox) {
         clearTimeout(debounceTimer);
-        suggestionsBox.innerHTML = ''; // Clear previous suggestions
-
-        if (term.length < 2) return; // Don't search for less than 2 characters
 
         debounceTimer = setTimeout(() => {
             fetch(`autocomplete.php?type=${type}&term=${term}`)
@@ -104,7 +178,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     displaySuggestions(data, suggestionsBox, (type === 'employee' ? employeeInput : customerInput));
                 })
                 .catch(error => console.error('Autocomplete error:', error));
-        }, 300); // Wait 300ms after user stops typing
+        }, 150);
     }
 
     function displaySuggestions(suggestions, suggestionsBox, inputField) {
@@ -114,15 +188,15 @@ document.addEventListener('DOMContentLoaded', function () {
         suggestions.forEach(suggestion => {
             const div = document.createElement('div');
             div.textContent = suggestion;
-            div.addEventListener('click', () => {
-                inputField.value = suggestion; // Set input value on click
-                suggestionsBox.innerHTML = ''; // Hide suggestions
+            div.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                inputField.value = suggestion;
+                suggestionsBox.innerHTML = '';
             });
             suggestionsBox.appendChild(div);
         });
     }
 
-    // Hide suggestions when clicking outside
     document.addEventListener('click', function (event) {
         if (!event.target.closest('.filter-group')) {
             employeeSuggestions.innerHTML = '';

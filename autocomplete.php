@@ -1,18 +1,15 @@
 <?php
-// This script provides name suggestions for the autocomplete fields.
-
 // --- DATABASE CONNECTION ---
-$servername = "localhost";
-$username = "your_db_user";
-$password = "your_db_password";
+$servername = "localhost"; // Or your DB host
+$username = "root";
+$password = "";
 $dbname = "db_pos";
 
-// --- Input Sanitization ---
-// Get the search term and the type (employee or customer)
+// --- Input ---
 $term = $_GET['term'] ?? '';
 $type = $_GET['type'] ?? '';
 
-if (empty($term) || empty($type)) {
+if (empty($type)) {
     echo json_encode([]);
     exit();
 }
@@ -20,33 +17,32 @@ if (empty($term) || empty($type)) {
 // --- Database Connection ---
 $conn = new mysqli($servername, $username, $password, $dbname);
 $conn->set_charset("utf8");
-
 if ($conn->connect_error) {
     echo json_encode([]);
     exit();
 }
 
-$sql = "";
 // Prepare query based on the type
+$sql = "";
 if ($type === 'employee') {
-    $sql = "SELECT user_name FROM user WHERE user_name LIKE ? LIMIT 10";
+    $sql = "SELECT user_name FROM user WHERE user_name LIKE ? ORDER BY user_name ASC LIMIT 25";
 } elseif ($type === 'customer') {
-    $sql = "SELECT customer_name FROM customer WHERE customer_name LIKE ? LIMIT 10";
+    $sql = "SELECT customer_name FROM customer WHERE customer_name LIKE ? ORDER BY customer_name ASC LIMIT 25";
 } else {
     echo json_encode([]);
     exit();
 }
 
 $stmt = $conn->prepare($sql);
-$searchTerm = "%" . $term . "%";
+// IMPORTANT CHANGE: Find names that START WITH the term.
+// If term is empty, this becomes "%" which matches everything.
+$searchTerm = $term . "%";
 $stmt->bind_param("s", $searchTerm);
-
 $stmt->execute();
-$result = $stmt->get_result();
 
+$result = $stmt->get_result();
 $suggestions = [];
 while ($row = $result->fetch_assoc()) {
-    // Add the name string directly to the suggestions array
     $suggestions[] = array_values($row)[0];
 }
 
