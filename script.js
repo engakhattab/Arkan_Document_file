@@ -4,7 +4,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const resultsPerPage = 17;
     let currentSortBy = 'invoice_create_date'; // Default sort column
     let currentSortOrder = 'DESC'; // Default sort order
-
+    const paymentsModal = document.getElementById('payments-modal');
+    const modalCloseBtn = document.getElementById('modal-close-btn');
+    const paymentsDetailsBody = document.querySelector('#payments-details-table tbody');
     const filterForm = document.getElementById('filterForm');
     const tableBody = document.querySelector('#resultsTable tbody');
     const noResultsDiv = document.getElementById('no-results');
@@ -71,19 +73,80 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             noResultsDiv.style.display = 'none';
             invoices.forEach(doc => {
-                // ADDED: Format the invoice total as currency
                 const formattedTotal = new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(doc.invoice_total || 0);
 
+                // Logic for the payments cell
+                let paymentsCellContent = '';
+                if (doc.payment_count > 0) {
+                    paymentsCellContent = `<span class="payments-link" data-invoice-id="${doc.invoice_id}">${doc.payment_count}</span>`;
+                } else {
+                    paymentsCellContent = `<span class="payments-none">•</span>`;
+                }
+
                 const row = `<tr>
-                    <td>${doc.invoice_number || ''}</td>
-                    <td>${doc.invoice_create_date || ''}</td>
-                    <td>${formattedTotal}</td> <td>${doc.employee_name || 'N/A'}</td>
-                    <td>${doc.customer_name || 'N/A'}</td>
-                </tr>`;
+                <td>${doc.invoice_number || ''}</td>
+                <td>${doc.invoice_create_date || ''}</td>
+                <td>${formattedTotal}</td>
+                <td>${doc.employee_name || 'N/A'}</td>
+                <td>${doc.customer_name || 'N/A'}</td>
+                <td>${paymentsCellContent}</td> <!-- NEW CELL CONTENT -->
+            </tr>`;
                 tableBody.innerHTML += row;
             });
         }
     }
+    tableBody.addEventListener('click', function (event) {
+        const target = event.target;
+        if (target.classList.contains('payments-link')) {
+            const invoiceId = target.getAttribute('data-invoice-id');
+            showPaymentsModal(invoiceId);
+        }
+    });
+    function showPaymentsModal(invoiceId) {
+        paymentsDetailsBody.innerHTML = '<tr><td colspan="2">جاري تحميل الدفعات...</td></tr>';
+        paymentsModal.style.display = 'flex';
+        setTimeout(() => { // Allows for smooth transition
+            paymentsModal.style.opacity = '1';
+            paymentsModal.querySelector('.modal-content').style.transform = 'translateY(0)';
+        }, 10);
+
+        fetch(`get_payments.php?invoice_id=${invoiceId}`)
+            .then(response => response.json())
+            .then(payments => {
+                paymentsDetailsBody.innerHTML = '';
+                if (payments.length > 0) {
+                    payments.forEach(payment => {
+                        const paymentAmount = new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(payment.entry_amount || 0);
+                        const row = `<tr>
+                        <td>${payment.entry_date || 'N/A'}</td>
+                        <td>${paymentAmount}</td>
+                    </tr>`;
+                        paymentsDetailsBody.innerHTML += row;
+                    });
+                } else {
+                    paymentsDetailsBody.innerHTML = '<tr><td colspan="2">لا توجد دفعات مسجلة لهذه الفاتورة.</td></tr>';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching payment details:', error);
+                paymentsDetailsBody.innerHTML = '<tr><td colspan="2" style="color: red;">حدث خطأ في تحميل البيانات.</td></tr>';
+            });
+    }
+
+    function hidePaymentsModal() {
+        paymentsModal.style.opacity = '0';
+        paymentsModal.querySelector('.modal-content').style.transform = 'translateY(-50px)';
+        setTimeout(() => {
+            paymentsModal.style.display = 'none';
+        }, 300); // Wait for transition to finish
+    }
+
+    modalCloseBtn.addEventListener('click', hidePaymentsModal);
+    paymentsModal.addEventListener('click', function (event) {
+        if (event.target === paymentsModal) { // Close if clicking on the overlay
+            hidePaymentsModal();
+        }
+    });
 
     function setupPagination(totalCount) {
         paginationControls.innerHTML = '';

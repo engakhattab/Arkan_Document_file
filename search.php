@@ -97,15 +97,23 @@ $stmt_sum->close();
 
 // --- QUERY 3: GET THE INVOICES FOR THE CURRENT PAGE ---
 $invoices_sql = "SELECT 
+                    inv.invoice_id, -- ADDED: We need the ID for the popup
                     inv.invoice_number, 
                     inv.invoice_create_date, 
-                    inv.invoice_total, -- ADDED: Select the invoice total
+                    inv.invoice_total,
                     usr.user_name AS employee_name,
-                    cust.customer_name "
-    . $base_sql_from . $where_clause .
-    " ORDER BY " . $sort_by . " " . $sort_order . // NEW: Use dynamic sorting
+                    cust.customer_name,
+                    -- ADDED: A subquery to count payments for each invoice
+                    (SELECT COUNT(*) FROM payment_entry WHERE entry_invoice_id = inv.invoice_id) AS payment_count
+                FROM 
+                    invoice AS inv
+                LEFT JOIN 
+                    user AS usr ON inv.invoice_employee_id = usr.user_id
+                LEFT JOIN 
+                    customer AS cust ON inv.invoice_customer_id = cust.customer_id"
+    . $where_clause .
+    " ORDER BY " . $sort_by . " " . $sort_order .
     " LIMIT ? OFFSET ?";
-
 // Add LIMIT and OFFSET params to the list
 $params[] = $results_per_page;
 $params[] = $offset;
