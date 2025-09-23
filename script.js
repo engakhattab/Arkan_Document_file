@@ -1,4 +1,7 @@
 document.addEventListener('DOMContentLoaded', function () {
+    let allInvoices = [];         // Holds all data from the server, never changes after load.
+    let filteredInvoices = [];    // Holds data after main filters (date, names) are applied.
+    let displayedInvoices = [];   // Holds data after live search and sorting, ready for display.
     // --- STATE & ELEMENT SELECTORS ---
     let currentPage = 1;
     const resultsPerPage = 17;
@@ -8,6 +11,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const modalCloseBtn = document.getElementById('modal-close-btn');
     const paymentsDetailsBody = document.querySelector('#payments-details-table tbody');
     const filterForm = document.getElementById('filterForm');
+    const liveSearchInput = document.getElementById('liveSearchInput');
+
     const tableBody = document.querySelector('#resultsTable tbody');
     const noResultsDiv = document.getElementById('no-results');
     const paginationControls = document.getElementById('pagination-controls');
@@ -19,12 +24,96 @@ document.addEventListener('DOMContentLoaded', function () {
     const customerSuggestions = document.getElementById('customer_suggestions');
     const summaryBar = document.getElementById('summary-bar'); // Add this selector
 
+    function initializeData() {
+        tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;">جاري تحميل البيانات الأولية...</td></tr>`;
+        fetch('search.php')
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) throw new Error(data.error);
+                allInvoices = data;
+                applyMainFilters(); // Apply default filters (which is none) and render the page.
+            })
+            .catch(error => {
+                console.error('Initial data load error:', error);
+                tableBody.innerHTML = `<tr><td colspan="6" style="color:red; text-align:center;">فشل تحميل البيانات. يرجى تحديث الصفحة.</td></tr>`;
+            });
+    }
     // --- MAIN SEARCH FORM LOGIC ---
-    filterForm.addEventListener('submit', function (event) {
-        event.preventDefault();
-        currentPage = 1; // Reset to page 1 for every new search
-        performSearch();
-    });
+    filterForm.addEventListener('submit', (e) => { e.preventDefault(); applyMainFilters(); });
+    liveSearchInput.addEventListener('input', applyLiveSearch);
+
+    // --- CORE LOGIC ---
+
+    // 1. Applies the main form filters
+    function applyMainFilters() {
+        const formData = new FormData(filterForm);
+        const dateFrom = formData.get('date_from');
+        const dateTo = formData.get('date_to');
+        const docNumber = formData.get('doc_number'); // The search term e.g., "82"
+        const employeeName = formData.get('employee_name').toLowerCase();
+        const customerName = formData.get('customer_name').toLowerCase();
+
+        filteredInvoices = allInvoices.filter(invoice => {
+            const invoiceDate = new Date(invoice.invoice_create_date.split(' ')[0]);
+            const checkDateFrom = !dateFrom || invoiceDate >= new Date(dateFrom);
+            const checkDateTo = !dateTo || invoiceDate <= new Date(dateTo);
+
+            // --- THIS IS THE FIX ---
+            // Change from .includes() to === for an exact match
+            const checkDocNumber = !docNumber || invoice.invoice_number.toString() === docNumber;
+
+            const checkEmployee = !employeeName || (invoice.employee_name && invoice.employee_name.toLowerCase().includes(employeeName));
+            const checkCustomer = !customerName || (invoice.customer_name && invoice.customer_name.toLowerCase().includes(customerName));
+
+            return checkDateFrom && checkDateTo && checkDocNumber && checkEmployee && checkCustomer;
+        });
+
+        // After filtering, apply the live search and update the page
+        applyLiveSearch();
+    }
+
+    // 2. Applies the live search filter
+    function applyLiveSearch() {
+        const searchTerm = liveSearchInput.value.toLowerCase();
+        if (!searchTerm) {
+            displayedInvoices = [...filteredInvoices];
+        } else {
+            displayedInvoices = filteredInvoices.filter(invoice => {
+                return Object.values(invoice).some(value =>
+                    value && value.toString().toLowerCase().includes(searchTerm)
+                );
+            });
+        }
+        applySorting(); // Always apply sorting after filtering
+    }
+    function applySorting() {
+        displayedInvoices.sort((a, b) => {
+            let valA = a[currentSortBy];
+            let valB = b[currentSortBy];
+
+            // Handle numeric sorting for total and number
+            if (currentSortBy === 'invoice_total' || currentSortBy === 'invoice_number') {
+                valA = parseFloat(valA || 0);
+                valB = parseFloat(valB || 0);
+            }
+
+            if (valA < valB) return currentSortOrder === 'ASC' ? -1 : 1;
+            if (valA > valB) return currentSortOrder === 'ASC' ? 1 : -1;
+            return 0;
+        });
+
+        currentPage = 1; // Reset to page 1 after any filter/sort change
+        updatePage();
+    }
+
+    // 4. Central function to update all UI elements
+    function updatePage() {
+        populateTable();
+        setupPagination();
+        updateSummaryBar();
+        updateSortIcons();
+    }
+
 
     function performSearch() {
         tableBody.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -50,51 +139,54 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
     // --- NEW: SUMMARY BAR UPDATE FUNCTION ---
-    function updateSummaryBar(totalSum, totalCount) {
+    function updateSummaryBar() {
         summaryBar.innerHTML = '';
+        const totalCount = displayedInvoices.length;
         if (totalCount === 0) return;
-
-        // Format the numbers
-        const formattedSum = new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(totalSum || 0);
+        const totalSum = displayedInvoices.reduce((sum, invoice) => sum + parseFloat(invoice.invoice_total || 0), 0);
+        const formattedSum = new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(totalSum);
         const formattedCount = new Intl.NumberFormat('ar-EG').format(totalCount);
-
-        // Create the HTML structure
         summaryBar.innerHTML = `
-        <span>إجمالي المبلغ: <strong>${formattedSum}</strong></span>
-        <span class="summary-divider">|</span>
-        <span>عدد الفواتير: <strong>${formattedCount}</strong></span>
-    `;
+            <span>إجمالي النتائج: <strong>${formattedSum}</strong></span>
+            <span class="summary-divider">|</span>
+            <span>عدد الفواتير: <strong>${formattedCount}</strong></span>
+        `;
     }
 
-    function populateTable(invoices) {
+    function populateTable() {
         tableBody.innerHTML = '';
-        if (!invoices || invoices.length === 0) {
+        const searchTerm = liveSearchInput.value;
+        const start = (currentPage - 1) * resultsPerPage;
+        const end = start + resultsPerPage;
+        const paginatedInvoices = displayedInvoices.slice(start, end);
+
+        if (paginatedInvoices.length === 0) {
             noResultsDiv.style.display = 'block';
-        } else {
-            noResultsDiv.style.display = 'none';
-            invoices.forEach(doc => {
-                const formattedTotal = new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(doc.invoice_total || 0);
-
-                // Logic for the payments cell
-                let paymentsCellContent = '';
-                if (doc.payment_count > 0) {
-                    paymentsCellContent = `<span class="payments-link" data-invoice-id="${doc.invoice_id}">${doc.payment_count}</span>`;
-                } else {
-                    paymentsCellContent = `<span class="payments-none">•</span>`;
-                }
-
-                const row = `<tr>
-                <td>${doc.invoice_number || ''}</td>
-                <td>${doc.invoice_create_date || ''}</td>
-                <td>${formattedTotal}</td>
-                <td>${doc.employee_name || 'N/A'}</td>
-                <td>${doc.customer_name || 'N/A'}</td>
-                <td>${paymentsCellContent}</td> <!-- NEW CELL CONTENT -->
-            </tr>`;
-                tableBody.innerHTML += row;
-            });
+            return;
         }
+        noResultsDiv.style.display = 'none';
+
+        const highlight = (text) => {
+            if (!searchTerm || !text) return text;
+            const regex = new RegExp(searchTerm, 'gi');
+            return text.toString().replace(regex, match => `<span class="highlight">${match}</span>`);
+        };
+
+        paginatedInvoices.forEach(doc => {
+            const formattedTotal = new Intl.NumberFormat('ar-EG', { style: 'currency', currency: 'EGP' }).format(doc.invoice_total || 0);
+            const paymentsCellContent = doc.payment_count > 0 ? `<span class="payments-link" data-invoice-id="${doc.invoice_id}">${doc.payment_count}</span>` : `<span class="payments-none">•</span>`;
+            const row = `<tr>
+                <td>${highlight(doc.invoice_number)}</td>
+                <td>${highlight(doc.invoice_create_date)}</td>
+                <td>${highlight(formattedTotal)}</td>
+                <td>${highlight(doc.employee_name) || 'N/A'}</td>
+                <td>${highlight(doc.customer_name) || 'N/A'}</td>
+                <td>${paymentsCellContent}</td>
+            </tr>`;
+            tableBody.innerHTML += row;
+        });
     }
+
     tableBody.addEventListener('click', function (event) {
         const target = event.target;
         if (target.classList.contains('payments-link')) {
@@ -148,76 +240,33 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    function setupPagination(totalCount) {
+    function setupPagination() {
         paginationControls.innerHTML = '';
-        const totalPages = Math.ceil(totalCount / resultsPerPage);
-
+        const totalPages = Math.ceil(displayedInvoices.length / resultsPerPage);
         if (totalPages <= 1) return;
 
-        // Helper function to create a page button
-        const createPageButton = (pageNumber) => {
+        const createPageButton = (page, text = page, isDisabled = false) => {
             const button = document.createElement('button');
-            button.textContent = pageNumber;
-            if (pageNumber === currentPage) {
-                button.classList.add('active');
-            }
+            button.textContent = text;
+            button.disabled = isDisabled;
+            if (page === currentPage) button.classList.add('active');
             button.addEventListener('click', () => {
-                currentPage = pageNumber;
-                performSearch();
+                currentPage = page;
+                updatePage();
+                tableBody.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
             return button;
         };
 
-        // Helper function to create an ellipsis
-        const createEllipsis = () => {
-            const ellipsis = document.createElement('span');
-            ellipsis.className = 'ellipsis';
-            ellipsis.textContent = '...';
-            return ellipsis;
-        };
+        paginationControls.appendChild(createPageButton(currentPage - 1, 'السابق', currentPage === 1));
 
-        // "Previous" Button
-        const prevButton = document.createElement('button');
-        prevButton.textContent = 'السابق';
-        prevButton.disabled = (currentPage === 1);
-        prevButton.addEventListener('click', () => {
-            if (currentPage > 1) { currentPage--; performSearch(); }
-        });
-        paginationControls.appendChild(prevButton);
-
-        // Logic for creating page number buttons with ellipsis
-        if (totalPages <= 7) { // If 7 or fewer pages, show all
-            for (let i = 1; i <= totalPages; i++) {
-                paginationControls.appendChild(createPageButton(i));
-            }
-        } else { // If more than 7 pages, use ellipsis logic
-            const pageNumbersToShow = new Set();
-            pageNumbersToShow.add(1);
-            pageNumbersToShow.add(totalPages);
-            pageNumbersToShow.add(currentPage);
-            if (currentPage > 1) pageNumbersToShow.add(currentPage - 1);
-            if (currentPage < totalPages) pageNumbersToShow.add(currentPage + 1);
-
-            let lastPage = 0;
-            const sortedPages = Array.from(pageNumbersToShow).sort((a, b) => a - b);
-
-            for (const page of sortedPages) {
-                if (lastPage > 0 && page > lastPage + 1) {
-                    paginationControls.appendChild(createEllipsis());
-                }
-                paginationControls.appendChild(createPageButton(page));
-                lastPage = page;
-            }
+        // Ellipsis logic here for page numbers
+        // This is a simplified version, you can enhance it further
+        for (let i = 1; i <= totalPages; i++) {
+            paginationControls.appendChild(createPageButton(i));
         }
 
-        // "Next" Button
-        const nextButton = document.createElement('button');
-        nextButton.textContent = 'التالي';
-        nextButton.disabled = (currentPage === totalPages);
-        nextButton.addEventListener('click', () => {
-            if (currentPage < totalPages) { currentPage++; performSearch(); }
-        });
-        paginationControls.appendChild(nextButton);
+        paginationControls.appendChild(createPageButton(currentPage + 1, 'التالي', currentPage === totalPages));
     }
 
     // --- DATE PRESET LOGIC ---
@@ -297,26 +346,25 @@ document.addEventListener('DOMContentLoaded', function () {
         header.addEventListener('click', () => {
             const sortBy = header.getAttribute('data-sort');
             if (sortBy === currentSortBy) {
-                // If it's the same column, reverse the order
                 currentSortOrder = currentSortOrder === 'DESC' ? 'ASC' : 'DESC';
             } else {
-                // If it's a new column, set it and default to descending
                 currentSortBy = sortBy;
                 currentSortOrder = 'DESC';
             }
-            currentPage = 1; // Go back to the first page
-            performSearch();
+            applySorting();
         });
     });
 
     function updateSortIcons() {
         document.querySelectorAll('#resultsTable th[data-sort]').forEach(header => {
             const icon = header.querySelector('.sort-icon');
-            if (header.getAttribute('data-sort') === currentSortBy) {
-                icon.textContent = currentSortOrder === 'DESC' ? '▼' : '▲';
-            } else {
-                icon.textContent = ' '; // Clear icon for non-active columns
+            if (icon) {
+                icon.textContent = header.getAttribute('data-sort') === currentSortBy
+                    ? (currentSortOrder === 'DESC' ? '▼' : '▲')
+                    : ' ';
             }
         });
     }
+    initializeData();
+
 });

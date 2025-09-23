@@ -378,12 +378,42 @@
         .autocomplete-suggestions div:hover {
             background-color: #f1f8fe;
         }
+
+        .live-search-container {
+            max-width: 600px;
+            margin: 0 auto 25px auto;
+        }
+
+        #liveSearchInput {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            font-size: 1.1em;
+            box-shadow: var(--shadow);
+        }
+
+        #liveSearchInput:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        .highlight {
+            background-color: #fffb85;
+            padding: 0 2px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
     </style>
 </head>
 
 <body>
 
     <h1>دفتر الفواتير</h1>
+    <div class="live-search-container">
+        <input type="text" id="liveSearchInput" placeholder="ابحث في النتائج الظاهرة...">
+    </div>
 
     <div class="container">
         <div class="filters">
