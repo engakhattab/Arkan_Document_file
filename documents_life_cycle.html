@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دورة حياة المستندات</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f6f7fb;
+            --card-bg: #ffffff;
+            --accent-color: #0052cc;
+            --accent-soft: rgba(0, 82, 204, 0.08);
+            --text-color: #222;
+            --muted-text: #6b7280;
+            --border-color: #e2e8f0;
+            --gain-color: #1a9850;
+            --loss-color: #c0392b;
+            --neutral-color: #6b7280;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Cairo', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        .page-shell {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 20px 48px;
+        }
+
+        header {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        header p {
+            margin: 0;
+            color: var(--muted-text);
+            font-size: 16px;
+        }
+
+        .filters-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .filters-card form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: center;
+            flex: 1;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 160px;
+        }
+
+        .input-group label {
+            font-size: 13px;
+            color: var(--muted-text);
+            margin-bottom: 6px;
+        }
+
+        .input-group input {
+            padding: 9px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 14px;
+            background: #f9fbff;
+        }
+
+        .filters-card button[type="submit"] {
+            padding: 10px 22px;
+            border: none;
+            border-radius: 10px;
+            background: var(--accent-color);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .filters-card button[type="submit"]:hover {
+            filter: brightness(1.05);
+        }
+
+        .quick-range {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .quick-range button {
+            padding: 8px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: #fff;
+            color: var(--accent-color);
+            cursor: pointer;
+        }
+
+        .quick-range button:hover {
+            background: var(--accent-soft);
+        }
+
+        .summary-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .summary-chip {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 16px 20px;
+            min-width: 180px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .summary-chip span {
+            font-size: 13px;
+            color: var(--muted-text);
+        }
+
+        .summary-chip strong {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        #stages-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 18px;
+        }
+
+        .stage-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+        }
+
+        .stage-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .stage-title {
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+        .stage-order {
+            font-size: 13px;
+            color: var(--muted-text);
+            background: var(--accent-soft);
+            padding: 4px 10px;
+            border-radius: 999px;
+        }
+
+        .stage-operation {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 6px 10px;
+            border-radius: 10px;
+            width: fit-content;
+        }
+
+        .stage-operation.plus {
+            background: rgba(26, 152, 80, 0.15);
+            color: var(--gain-color);
+        }
+
+        .stage-operation.minus {
+            background: rgba(192, 57, 43, 0.15);
+            color: var(--loss-color);
+        }
+
+        .stage-operation.equal {
+            background: rgba(107, 114, 128, 0.15);
+            color: var(--neutral-color);
+        }
+
+        .stage-metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 15px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 12px;
+        }
+
+        .stage-metric:first-of-type {
+            border-top: none;
+            padding-top: 0;
+        }
+
+        .stage-metric span {
+            color: var(--muted-text);
+            font-size: 14px;
+        }
+
+        .stage-metric strong {
+            font-size: 19px;
+        }
+
+        .empty-state {
+            background: #fff6f6;
+            border: 1px dashed #f87171;
+            border-radius: 12px;
+            padding: 28px;
+            text-align: center;
+            color: #b91c1c;
+            grid-column: 1 / -1;
+        }
+
+        .last-updated {
+            margin-top: 24px;
+            color: var(--muted-text);
+            font-size: 13px;
+            text-align: left;
+        }
+
+        @media (max-width: 640px) {
+            .filters-card {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filters-card form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .input-group {
+                width: 100%;
+            }
+
+            .quick-range {
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-shell">
+        <header>
+            <h1>دورة حياة المستندات</h1>
+            <p>تعرّف على عدد وقيمة المستندات في كل مرحلة وفق الترتيب المحدد في أنواع الفواتير.</p>
+        </header>
+
+        <section class="filters-card">
+            <form id="filters-form">
+                <div class="input-group">
+                    <label for="date-from">من تاريخ</label>
+                    <input type="date" id="date-from" name="date_from">
+                </div>
+                <div class="input-group">
+                    <label for="date-to">إلى تاريخ</label>
+                    <input type="date" id="date-to" name="date_to">
+                </div>
+                <button type="submit">تحديث النتائج</button>
+            </form>
+            <div class="quick-range">
+                <button type="button" data-range="today">اليوم</button>
+                <button type="button" data-range="week">هذا الأسبوع</button>
+                <button type="button" data-range="month">هذا الشهر</button>
+            </div>
+        </section>
+
+        <div class="summary-bar" id="summary-bar">
+            <!-- Populated via JS -->
+        </div>
+
+        <section id="stages-container">
+            <!-- Stage cards inserted via JS -->
+        </section>
+
+        <div class="last-updated" id="last-updated"></div>
+    </div>
+
+    <script src="documents_life_cycle.js"></script>
+</body>
+</html>
