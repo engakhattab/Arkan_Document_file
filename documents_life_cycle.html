@@ -9,16 +9,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #f6f7fb;
+            --bg-color: #f5f7fb;
             --card-bg: #ffffff;
-            --accent-color: #0052cc;
-            --accent-soft: rgba(0, 82, 204, 0.08);
-            --text-color: #222;
+            --accent-color: #1061d7;
+            --accent-soft: rgba(16, 97, 215, 0.1);
+            --border-color: #d7e0ef;
+            --table-head-bg: #c6ddff;
+            --table-head-text: #0f172a;
+            --table-row-hover: rgba(16, 97, 215, 0.08);
             --muted-text: #6b7280;
-            --border-color: #e2e8f0;
-            --gain-color: #1a9850;
-            --loss-color: #c0392b;
-            --neutral-color: #6b7280;
+            --text-color: #1f2937;
+            --danger-text: #b91c1c;
         }
 
         * {
@@ -33,22 +34,20 @@
         }
 
         .page-shell {
-            max-width: 1200px;
+            max-width: 1280px;
             margin: 0 auto;
             padding: 32px 20px 48px;
         }
 
         header {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
             margin-bottom: 24px;
         }
 
         header h1 {
-            margin: 0;
-            font-size: 28px;
+            margin: 0 0 8px;
+            font-size: 30px;
             font-weight: 700;
+            color: var(--text-color);
         }
 
         header p {
@@ -60,27 +59,26 @@
         .filters-card {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 20px;
+            border-radius: 18px;
+            padding: 20px 24px;
             display: flex;
             flex-wrap: wrap;
-            gap: 16px;
-            align-items: center;
-            margin-bottom: 20px;
+            gap: 18px;
+            align-items: flex-end;
+            margin-bottom: 22px;
         }
 
         .filters-card form {
             display: flex;
             flex-wrap: wrap;
-            gap: 16px;
-            align-items: center;
+            gap: 18px;
             flex: 1;
         }
 
         .input-group {
             display: flex;
             flex-direction: column;
-            min-width: 160px;
+            min-width: 180px;
         }
 
         .input-group label {
@@ -89,69 +87,86 @@
             margin-bottom: 6px;
         }
 
-        .input-group input {
-            padding: 9px 12px;
+        .input-group input,
+        .input-group select {
+            padding: 10px 12px;
+            border-radius: 12px;
             border: 1px solid var(--border-color);
-            border-radius: 10px;
-            font-size: 14px;
             background: #f9fbff;
+            font-size: 14px;
         }
 
-        .filters-card button[type="submit"] {
-            padding: 10px 22px;
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .form-actions button {
+            padding: 10px 20px;
+            border-radius: 12px;
             border: none;
-            border-radius: 10px;
-            background: var(--accent-color);
-            color: #fff;
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
         }
 
-        .filters-card button[type="submit"]:hover {
+        .btn-primary {
+            background: var(--accent-color);
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
             filter: brightness(1.05);
+        }
+
+        .btn-secondary {
+            background: #e8eefb;
+            color: var(--accent-color);
         }
 
         .quick-range {
             display: flex;
-            gap: 8px;
+            gap: 12px;
             flex-wrap: wrap;
         }
 
         .quick-range button {
             padding: 8px 16px;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
-            background: #fff;
+            border-radius: 999px;
+            border: 1px solid transparent;
+            background: #eef4ff;
             color: var(--accent-color);
             cursor: pointer;
+            font-size: 14px;
         }
 
         .quick-range button:hover {
+            border-color: var(--accent-color);
             background: var(--accent-soft);
         }
 
         .summary-bar {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 14px;
             margin-bottom: 18px;
         }
 
         .summary-chip {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
-            border-radius: 14px;
-            padding: 16px 20px;
-            min-width: 180px;
+            border-radius: 16px;
+            padding: 16px 22px;
+            min-width: 190px;
             display: flex;
             flex-direction: column;
             gap: 6px;
         }
 
         .summary-chip span {
-            font-size: 13px;
             color: var(--muted-text);
+            font-size: 13px;
         }
 
         .summary-chip strong {
@@ -159,110 +174,124 @@
             font-weight: 700;
         }
 
-        #stages-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 18px;
-        }
-
-        .stage-card {
+        .table-card {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 18px;
-            padding: 20px;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            direction: rtl;
+            min-width: 960px;
+        }
+
+        thead th {
+            background: var(--table-head-bg);
+            color: var(--table-head-text);
+            text-align: center;
+            padding: 14px 12px;
+            font-size: 15px;
+            font-weight: 700;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        thead th.stage-column {
+            position: relative;
+        }
+
+        thead th.stage-column::after {
+            content: '';
+            position: absolute;
+            inset-inline: 22px;
+            bottom: 8px;
+            height: 4px;
+            border-radius: 999px;
+            background: var(--stage-color, rgba(16, 97, 215, 0.4));
+        }
+
+        thead th .stage-head-title {
+            display: block;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+
+        thead th .stage-head-meta {
+            font-size: 11px;
+            color: var(--muted-text);
+            font-weight: 500;
+        }
+
+        tbody td {
+            text-align: center;
+            padding: 12px 10px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+            vertical-align: top;
+        }
+
+        tbody tr:nth-child(even) {
+            background: rgba(237, 242, 255, 0.35);
+        }
+
+        tbody tr:hover {
+            background: var(--table-row-hover);
+        }
+
+        .stage-cell {
+            text-align: center;
+        }
+
+        .stage-cell-content {
             display: flex;
             flex-direction: column;
-            gap: 14px;
-            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
-        }
-
-        .stage-header {
-            display: flex;
-            justify-content: space-between;
+            gap: 6px;
             align-items: center;
-            gap: 12px;
         }
 
-        .stage-title {
-            font-size: 17px;
-            font-weight: 700;
+        .stage-line {
+            display: flex;
+            gap: 6px;
+            align-items: baseline;
         }
 
-        .stage-order {
-            font-size: 13px;
+        .stage-line span {
+            font-size: 12px;
             color: var(--muted-text);
-            background: var(--accent-soft);
-            padding: 4px 10px;
-            border-radius: 999px;
         }
 
-        .stage-operation {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            padding: 6px 10px;
-            border-radius: 10px;
-            width: fit-content;
-        }
-
-        .stage-operation.plus {
-            background: rgba(26, 152, 80, 0.15);
-            color: var(--gain-color);
-        }
-
-        .stage-operation.minus {
-            background: rgba(192, 57, 43, 0.15);
-            color: var(--loss-color);
-        }
-
-        .stage-operation.equal {
-            background: rgba(107, 114, 128, 0.15);
-            color: var(--neutral-color);
-        }
-
-        .stage-metric {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .stage-line strong {
             font-size: 15px;
-            border-top: 1px solid var(--border-color);
-            padding-top: 12px;
+            color: var(--text-color);
         }
 
-        .stage-metric:first-of-type {
-            border-top: none;
-            padding-top: 0;
-        }
-
-        .stage-metric span {
-            color: var(--muted-text);
-            font-size: 14px;
-        }
-
-        .stage-metric strong {
-            font-size: 19px;
-        }
-
-        .empty-state {
-            background: #fff6f6;
-            border: 1px dashed #f87171;
-            border-radius: 12px;
+        .table-empty {
             padding: 28px;
             text-align: center;
-            color: #b91c1c;
-            grid-column: 1 / -1;
+            font-size: 15px;
+            color: var(--muted-text);
+        }
+
+        .table-empty.danger {
+            color: var(--danger-text);
+            background: #fff5f5;
         }
 
         .last-updated {
-            margin-top: 24px;
+            margin-top: 18px;
             color: var(--muted-text);
             font-size: 13px;
             text-align: left;
         }
 
-        @media (max-width: 640px) {
+        @media (max-width: 768px) {
             .filters-card {
                 flex-direction: column;
                 align-items: stretch;
@@ -270,15 +299,19 @@
 
             .filters-card form {
                 flex-direction: column;
-                align-items: stretch;
             }
 
             .input-group {
                 width: 100%;
             }
 
-            .quick-range {
-                justify-content: space-between;
+            .form-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .form-actions button {
+                width: 100%;
             }
         }
     </style>
@@ -287,7 +320,7 @@
     <div class="page-shell">
         <header>
             <h1>دورة حياة المستندات</h1>
-            <p>تعرّف على عدد وقيمة المستندات في كل مرحلة وفق الترتيب المحدد في أنواع الفواتير.</p>
+            <p>تابع عدد وقيمة المستندات في كل مرحلة وفق ترتيب أنواع الفواتير، مع إمكانية التصفية حسب التاريخ، العميل أو المورد.</p>
         </header>
 
         <section class="filters-card">
@@ -300,7 +333,22 @@
                     <label for="date-to">إلى تاريخ</label>
                     <input type="date" id="date-to" name="date_to">
                 </div>
-                <button type="submit">تحديث النتائج</button>
+                <div class="input-group">
+                    <label for="customer-select">العميل</label>
+                    <select id="customer-select" name="customer_id">
+                        <option value="">كل العملاء</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="supplier-select">المورد</label>
+                    <select id="supplier-select" name="supplier_id">
+                        <option value="">كل الموردين</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">تحديث النتائج</button>
+                    <button type="button" id="reset-filters" class="btn-secondary">إعادة تعيين</button>
+                </div>
             </form>
             <div class="quick-range">
                 <button type="button" data-range="today">اليوم</button>
@@ -309,12 +357,18 @@
             </div>
         </section>
 
-        <div class="summary-bar" id="summary-bar">
-            <!-- Populated via JS -->
-        </div>
+        <div class="summary-bar" id="summary-bar"></div>
 
-        <section id="stages-container">
-            <!-- Stage cards inserted via JS -->
+        <section class="table-card">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr id="table-head-row"></tr>
+                    </thead>
+                    <tbody id="table-body"></tbody>
+                </table>
+            </div>
+            <div class="table-empty" id="table-empty" hidden></div>
         </section>
 
         <div class="last-updated" id="last-updated"></div>
