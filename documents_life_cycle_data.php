@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 header('Content-Type: application/json; charset=utf-8');
 
 $servername = "localhost";
@@ -664,16 +664,26 @@ function buildLifecycleData(
                 'customer_id' => $customerId,
                 'customer_name' => $customerName ?: 'Unknown customer',
                 'cycles' => [],
+                'total_documents' => 0,
             ];
         } elseif ($customers[$customerKey]['customer_name'] === 'Unknown customer' && $customerName) {
             $customers[$customerKey]['customer_name'] = $customerName;
         }
 
+        $cycleDocumentCount = 0;
+        foreach ($documents as $documentEntry) {
+            if (!empty($documentEntry['invoice_id'])) {
+                $cycleDocumentCount++;
+            }
+        }
+
         $customers[$customerKey]['cycles'][] = [
             'cycle_id' => $pathKey,
             'documents' => $documents,
+            'documents_count' => $cycleDocumentCount,
             'latest_activity_at' => $latestDate,
         ];
+        $customers[$customerKey]['total_documents'] += $cycleDocumentCount;
     }
 
     foreach ($customers as &$customerGroup) {
@@ -687,6 +697,13 @@ function buildLifecycleData(
         });
         $customerGroup['cycles'] = array_values($customerGroup['cycles']);
         $customerGroup['row_count'] = count($customerGroup['cycles']);
+        if (!isset($customerGroup['total_documents'])) {
+            $totalDocs = 0;
+            foreach ($customerGroup['cycles'] as $cycleInfo) {
+                $totalDocs += $cycleInfo['documents_count'] ?? 0;
+            }
+            $customerGroup['total_documents'] = $totalDocs;
+        }
     }
     unset($customerGroup);
 
@@ -803,3 +820,7 @@ function loadLifecycleLookups(mysqli $conn): array
         'suppliers' => $suppliers,
     ];
 }
+
+
+
+

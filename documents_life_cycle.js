@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
     'use strict';
 
     const lifecycleSettings = window.lifecycleSettings || {};
@@ -287,17 +287,9 @@
             title.textContent = stage.column_label || stage.type_name || `Stage ${index + 1}`;
             th.appendChild(title);
 
-            if (typeof stage.type_sort_number === 'number') {
-                const meta = document.createElement('span');
-                meta.className = 'stage-head-meta';
-                meta.textContent = `Order ${stage.type_sort_number}`;
-                th.appendChild(meta);
-            }
-
             dom.tableHeadRow.appendChild(th);
         });
     }
-
     function renderSummary(summary) {
         if (!dom.summaryBar) {
             return;
@@ -384,15 +376,33 @@
         name.textContent = customer.customer_name || 'Unknown customer';
         td.appendChild(name);
 
-        const meta = document.createElement('div');
-        meta.className = 'customer-meta';
         const cycleCount = rowSpan || (Array.isArray(customer.cycles) ? customer.cycles.length : 0);
-        meta.textContent = `${numberFormatter.format(cycleCount)} ${cycleCount === 1 ? 'cycle' : 'cycles'}`;
-        td.appendChild(meta);
+        const cycleMeta = document.createElement('div');
+        cycleMeta.className = 'customer-meta';
+        cycleMeta.textContent = `${numberFormatter.format(cycleCount)} ${cycleCount === 1 ? 'cycle' : 'cycles'}`;
+        td.appendChild(cycleMeta);
+
+        const totalDocs = typeof customer.total_documents === 'number'
+            ? customer.total_documents
+            : (Array.isArray(customer.cycles)
+                ? customer.cycles.reduce(function (sum, cycle) {
+                      if (!cycle || !Array.isArray(cycle.documents)) {
+                          return sum;
+                      }
+                      const cycleDocs = cycle.documents.reduce(function (count, doc) {
+                          return count + (doc && doc.invoice_id ? 1 : 0);
+                      }, 0);
+                      return sum + cycleDocs;
+                  }, 0)
+                : 0);
+
+        const docsMeta = document.createElement('div');
+        docsMeta.className = 'customer-meta';
+        docsMeta.textContent = `${numberFormatter.format(totalDocs)} ${totalDocs === 1 ? 'document' : 'documents'}`;
+        td.appendChild(docsMeta);
 
         return td;
     }
-
     function createDocumentCell(entry, stage) {
         const td = document.createElement('td');
         td.className = 'doc-cell';
@@ -469,3 +479,6 @@
 
     init();
 })();
+
+
+
