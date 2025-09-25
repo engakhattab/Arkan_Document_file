@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دورة حياة المستندات</title>
+    <title>دورة المستندات</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
@@ -314,23 +315,92 @@
                 width: 100%;
             }
         }
+
+        tbody td {
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .customer-cell {
+            background: #f1f5ff;
+            font-weight: 600;
+            text-align: left;
+            vertical-align: top;
+            padding: 16px 18px;
+            min-width: 220px;
+        }
+
+        .customer-name {
+            font-size: 16px;
+            margin-bottom: 6px;
+        }
+
+        .customer-meta {
+            font-size: 13px;
+            color: var(--muted-text);
+        }
+
+        .doc-cell {
+            text-align: center;
+            padding: 14px 12px;
+            min-width: 160px;
+            vertical-align: top;
+        }
+
+        .doc-cell--empty {
+            color: var(--muted-text);
+            font-style: italic;
+        }
+
+        .doc-cell--in-range {
+            background: var(--accent-soft);
+        }
+
+        .doc-number {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .doc-details {
+            margin-top: 6px;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            font-size: 12px;
+            color: var(--muted-text);
+        }
+
+        .doc-date {
+            margin-top: 6px;
+            font-size: 12px;
+            color: var(--muted-text);
+        }
+
+        thead th.customer-column {
+            text-align: left;
+        }
+
+        .doc-link {
+            white-space: nowrap;
+        }
     </style>
 </head>
+
 <body>
     <div class="page-shell">
         <header>
-            <h1>دورة حياة المستندات</h1>
-            <p>تابع عدد وقيمة المستندات في كل مرحلة وفق ترتيب أنواع الفواتير، مع إمكانية التصفية حسب التاريخ، العميل أو المورد.</p>
+            <h1>دورة المستندات</h1>
+
         </header>
 
         <section class="filters-card">
             <form id="filters-form">
                 <div class="input-group">
-                    <label for="date-from">من تاريخ</label>
+                    <label for="date-from">التاريخ من</label>
                     <input type="date" id="date-from" name="date_from">
                 </div>
                 <div class="input-group">
-                    <label for="date-to">إلى تاريخ</label>
+                    <label for="date-to">التاريخ الى</label>
                     <input type="date" id="date-to" name="date_to">
                 </div>
                 <div class="input-group">
@@ -346,13 +416,13 @@
                     </select>
                 </div>
                 <div class="form-actions">
-                    <button type="submit" class="btn-primary">تحديث النتائج</button>
-                    <button type="button" id="reset-filters" class="btn-secondary">إعادة تعيين</button>
+                    <button type="submit" class="btn-primary">تحديث</button>
+                    <button type="button" id="reset-filters" class="btn-secondary">اعادة تعيين</button>
                 </div>
             </form>
             <div class="quick-range">
                 <button type="button" data-range="today">اليوم</button>
-                <button type="button" data-range="week">هذا الأسبوع</button>
+                <button type="button" data-range="week">الاسبوع</button>
                 <button type="button" data-range="month">هذا الشهر</button>
             </div>
         </section>
@@ -374,6 +444,12 @@
         <div class="last-updated" id="last-updated"></div>
     </div>
 
+    <script>
+        window.lifecycleSettings = window.lifecycleSettings || {};
+        // Example: window.lifecycleSettings.stageTypeIds = [101, 205, 301];
+        // Example: window.lifecycleSettings.relationTypeIds = [2];
+    </script>
     <script src="documents_life_cycle.js"></script>
 </body>
+
 </html>
