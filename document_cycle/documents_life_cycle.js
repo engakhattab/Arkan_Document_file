@@ -5,14 +5,14 @@
 
     const configuredStageTypeIds = Array.isArray(lifecycleSettings.stageTypeIds)
         ? lifecycleSettings.stageTypeIds.filter(function (value) {
-              return value !== null && value !== undefined && value !== '';
-          }).map(String)
+            return value !== null && value !== undefined && value !== '';
+        }).map(String)
         : [];
 
     const configuredRelationTypeIds = Array.isArray(lifecycleSettings.relationTypeIds)
         ? lifecycleSettings.relationTypeIds.filter(function (value) {
-              return value !== null && value !== undefined && value !== '';
-          }).map(String)
+            return value !== null && value !== undefined && value !== '';
+        }).map(String)
         : [];
 
     const dom = {
@@ -272,7 +272,7 @@
 
         const customerTh = document.createElement('th');
         customerTh.className = 'customer-column';
-        customerTh.textContent = 'Customer';
+        customerTh.textContent = 'العميل';
         dom.tableHeadRow.appendChild(customerTh);
 
         stages.forEach(function (stage, index) {
@@ -341,6 +341,7 @@
         customers.forEach(function (customer) {
             const cycles = Array.isArray(customer.cycles) && customer.cycles.length ? customer.cycles : [createEmptyCycle()];
             const rowSpan = customer.row_count || cycles.length;
+            const mergeMap = buildMergeMap(cycles, currentStages.length);
 
             cycles.forEach(function (cycle, index) {
                 const tr = document.createElement('tr');
@@ -349,10 +350,16 @@
                     tr.appendChild(createCustomerCell(customer, rowSpan));
                 }
 
+                const rowMerge = mergeMap[index] || {};
                 const documents = Array.isArray(cycle.documents) ? cycle.documents : [];
                 for (let stageIndex = 0; stageIndex < currentStages.length; stageIndex += 1) {
+                    const mergeInfo = rowMerge[stageIndex];
+                    if (mergeInfo && mergeInfo.skip) {
+                        continue;
+                    }
+
                     const entry = documents[stageIndex] || null;
-                    tr.appendChild(createDocumentCell(entry, currentStages[stageIndex]));
+                    tr.appendChild(createDocumentCell(entry, currentStages[stageIndex], mergeInfo));
                 }
 
                 dom.tableBody.appendChild(tr);
@@ -360,6 +367,61 @@
         });
     }
 
+    function buildMergeMap(cycles, stageCount) {
+        const mergeMap = [];
+
+        if (!Array.isArray(cycles) || !cycles.length || !stageCount) {
+            return mergeMap;
+        }
+
+        for (let stageIndex = 0; stageIndex < stageCount; stageIndex += 1) {
+            let rowIndex = 0;
+            while (rowIndex < cycles.length) {
+                const documents = Array.isArray(cycles[rowIndex].documents) ? cycles[rowIndex].documents : [];
+                const entry = documents[stageIndex] || null;
+                const invoiceId = entry && entry.invoice_id ? entry.invoice_id : null;
+
+                if (!invoiceId) {
+                    rowIndex += 1;
+                    continue;
+                }
+
+                let runLength = 1;
+                while ((rowIndex + runLength) < cycles.length) {
+                    const nextDocuments = Array.isArray(cycles[rowIndex + runLength].documents)
+                        ? cycles[rowIndex + runLength].documents
+                        : [];
+                    const nextEntry = nextDocuments[stageIndex] || null;
+                    const nextInvoiceId = nextEntry && nextEntry.invoice_id ? nextEntry.invoice_id : null;
+
+                    if (nextInvoiceId !== invoiceId) {
+                        break;
+                    }
+
+                    runLength += 1;
+                }
+
+                if (runLength > 1) {
+                    if (!mergeMap[rowIndex]) {
+                        mergeMap[rowIndex] = {};
+                    }
+                    mergeMap[rowIndex][stageIndex] = { span: runLength };
+
+                    for (let offset = 1; offset < runLength; offset += 1) {
+                        const skipIndex = rowIndex + offset;
+                        if (!mergeMap[skipIndex]) {
+                            mergeMap[skipIndex] = {};
+                        }
+                        mergeMap[skipIndex][stageIndex] = { skip: true };
+                    }
+                }
+
+                rowIndex += runLength;
+            }
+        }
+
+        return mergeMap;
+    }
     function createEmptyCycle() {
         return { documents: [] };
     }
@@ -386,14 +448,14 @@
             ? customer.total_documents
             : (Array.isArray(customer.cycles)
                 ? customer.cycles.reduce(function (sum, cycle) {
-                      if (!cycle || !Array.isArray(cycle.documents)) {
-                          return sum;
-                      }
-                      const cycleDocs = cycle.documents.reduce(function (count, doc) {
-                          return count + (doc && doc.invoice_id ? 1 : 0);
-                      }, 0);
-                      return sum + cycleDocs;
-                  }, 0)
+                    if (!cycle || !Array.isArray(cycle.documents)) {
+                        return sum;
+                    }
+                    const cycleDocs = cycle.documents.reduce(function (count, doc) {
+                        return count + (doc && doc.invoice_id ? 1 : 0);
+                    }, 0);
+                    return sum + cycleDocs;
+                }, 0)
                 : 0);
 
         const docsMeta = document.createElement('div');
@@ -403,7 +465,7 @@
 
         return td;
     }
-    function createDocumentCell(entry, stage) {
+    function createDocumentCell(entry, stage, mergeInfo) {
         const td = document.createElement('td');
         td.className = 'doc-cell';
 
@@ -413,41 +475,30 @@
             return td;
         }
 
+        if (mergeInfo && mergeInfo.span > 1) {
+            td.rowSpan = mergeInfo.span;
+            td.classList.add('doc-cell--merged');
+        }
+
         td.dataset.invoiceId = String(entry.invoice_id);
         td.setAttribute('title', buildCellTooltip(entry, stage));
 
-        const numberEl = document.createElement('div');
+        const header = document.createElement('div');
+        header.className = 'doc-header';
+
+        const numberEl = document.createElement('span');
         numberEl.className = 'doc-number';
-        numberEl.textContent = entry.invoice_number || `#${entry.invoice_id}`;
-        td.appendChild(numberEl);
-
-        const details = document.createElement('div');
-        details.className = 'doc-details';
-
-        if (entry.converted_from_invoice_number) {
-            const fromEl = document.createElement('span');
-            fromEl.className = 'doc-link doc-link--from';
-            fromEl.textContent = `from ${entry.converted_from_invoice_number}`;
-            details.appendChild(fromEl);
-        }
-
-        if (entry.converted_to_invoice_number) {
-            const toEl = document.createElement('span');
-            toEl.className = 'doc-link doc-link--to';
-            toEl.textContent = `to ${entry.converted_to_invoice_number}`;
-            details.appendChild(toEl);
-        }
-
-        if (details.children.length) {
-            td.appendChild(details);
-        }
+        numberEl.textContent = entry.invoice_number || ('#' + entry.invoice_id);
+        header.appendChild(numberEl);
 
         if (entry.invoice_date) {
-            const dateEl = document.createElement('div');
+            const dateEl = document.createElement('span');
             dateEl.className = 'doc-date';
             dateEl.textContent = dateFormatter.format(new Date(entry.invoice_date));
-            td.appendChild(dateEl);
+            header.appendChild(dateEl);
         }
+
+        td.appendChild(header);
 
         if (entry.is_within_filters) {
             td.classList.add('doc-cell--in-range');
@@ -479,6 +530,17 @@
 
     init();
 })();
+
+
+
+
+
+
+
+
+
+
+
 
 
 

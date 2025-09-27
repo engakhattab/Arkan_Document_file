@@ -11,7 +11,7 @@ return [
     // Provide the invoice type IDs you want to show, in the desired order.
     // Leave empty to let the system pick the first types ordered by type_sort_number.
     // , 49, 32, 33,39
-    'stage_type_ids' => [6, 45, 43, 44],
+    'stage_type_ids' => [45, 43, 44],
 
     // Optional: override the column labels per type id. Example: 5 => 'Purchase Order'.
     'stage_labels' => [],
