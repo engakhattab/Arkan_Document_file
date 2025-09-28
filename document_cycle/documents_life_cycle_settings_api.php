@@ -188,7 +188,8 @@ function handleSaveCycle(array $cycles, ?string $activeId, array $input): array
 
     $stageLabels = normalizeLabelMap($input['stage_labels'] ?? []);
 
-    $maxStageCount = isset($input['max_auto_stage_count']) ? max(1, (int) $input['max_auto_stage_count']) : 4;
+    $maxStageCountInput = isset($input['max_auto_stage_count']) ? (int) $input['max_auto_stage_count'] : 0;
+    $maxStageCount = $maxStageCountInput > 0 ? $maxStageCountInput : (count($stageTypeIds) ?: 4);
 
     $existingId = isset($input['id']) ? trim((string) $input['id']) : '';
     $cycleId = $existingId;
@@ -309,6 +310,7 @@ function fetchInvoiceTypes(mysqli $conn): array
 
     return $types;
 }
+
 
 
 

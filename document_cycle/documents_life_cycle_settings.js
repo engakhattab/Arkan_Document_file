@@ -16,7 +16,6 @@
         addCycleButton: document.getElementById('add-cycle'),
         cycleForm: document.getElementById('cycle-form'),
         cycleName: document.getElementById('cycle-name'),
-        maxStageCount: document.getElementById('max-stage-count'),
         availableStageTypes: document.getElementById('available-stage-types'),
         addStageButton: document.getElementById('add-stage'),
         selectedStages: document.getElementById('selected-stages'),
@@ -192,10 +191,6 @@
             dom.cycleName.value = cycleData.name || '';
         }
 
-        if (dom.maxStageCount) {
-            dom.maxStageCount.value = cycleData.max_auto_stage_count || 4;
-        }
-
         const stageIds = Array.isArray(cycleData.stage_type_ids) ? cycleData.stage_type_ids : [];
         const stageLabels = cycleData.stage_labels || {};
         state.stageOrder = stageIds.map(function (id) {
@@ -221,9 +216,6 @@
         }
         if (dom.cycleName) {
             dom.cycleName.value = '';
-        }
-        if (dom.maxStageCount) {
-            dom.maxStageCount.value = 4;
         }
         state.stageOrder = [];
         renderStageBuilder();
@@ -468,8 +460,8 @@
                 name: name,
                 stage_type_ids: stageTypeIds,
                 stage_labels: stageLabels,
+                max_auto_stage_count: Math.max(stageTypeIds.length, 1),
 
-                max_auto_stage_count: dom.maxStageCount ? Number(dom.maxStageCount.value) || 4 : 4,
             },
         };
 
@@ -603,6 +595,7 @@
 
     init();
 })();
+
 
 
 

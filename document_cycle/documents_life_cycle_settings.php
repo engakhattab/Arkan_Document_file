@@ -8,19 +8,18 @@ if (!defined('DOCUMENTS_LIFE_CYCLE_SETTINGS_ACCESS')) {
 }
 
 return array (
-  'active_cycle_id' => 'default',
+  'active_cycle_id' => 'wecare2',
   'cycles' => 
   array (
-    'default' => 
+    'wecare2' => 
     array (
-      'id' => 'default',
-      'name' => 'Default Cycle',
+      'id' => 'wecare2',
+      'name' => 'WeCare2',
       'stage_type_ids' => 
       array (
-        0 => 45,
-        1 => 43,
+        0 => 43,
+        1 => 34,
         2 => 44,
-        3 => 32,
       ),
       'stage_labels' => 
       array (
@@ -33,49 +32,13 @@ return array (
       'name' => 'WeCare1',
       'stage_type_ids' => 
       array (
-        0 => 14,
-        1 => 28,
-        2 => 2,
-        3 => 45,
-        4 => 4,
-        5 => 49,
-        6 => 34,
-        7 => 44,
+        0 => 45,
+        1 => 31,
       ),
       'stage_labels' => 
       array (
       ),
-      'max_auto_stage_count' => 7,
-    ),
-    'wecare2' => 
-    array (
-      'id' => 'wecare2',
-      'name' => 'WeCare2',
-      'stage_type_ids' => 
-      array (
-        0 => 15,
-        1 => 32,
-        2 => 36,
-      ),
-      'stage_labels' => 
-      array (
-      ),
-      'max_auto_stage_count' => 4,
-    ),
-    'starfoods' => 
-    array (
-      'id' => 'starfoods',
-      'name' => 'starfoods',
-      'stage_type_ids' => 
-      array (
-        0 => 43,
-        1 => 6,
-        2 => 34,
-      ),
-      'stage_labels' => 
-      array (
-      ),
-      'max_auto_stage_count' => 3,
+      'max_auto_stage_count' => 2,
     ),
   ),
 );

@@ -1,4 +1,4 @@
-(function () {
+Ôªø(function () {
     'use strict';
 
     const dom = {
@@ -341,7 +341,7 @@
 
         const customerTh = document.createElement('th');
         customerTh.className = 'customer-column';
-        customerTh.textContent = '«·⁄„Ì·';
+        customerTh.textContent = 'Customer';
         dom.tableHeadRow.appendChild(customerTh);
 
         stages.forEach(function (stage, index) {
