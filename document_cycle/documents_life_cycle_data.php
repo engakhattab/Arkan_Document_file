@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 header('Content-Type: application/json; charset=utf-8');
 
 $servername = "localhost";
@@ -6,7 +6,8 @@ $username = "root";
 $password = "";
 $dbname = "db_pos";
 
-$settings = loadLifecycleSettings(__DIR__ . '/documents_life_cycle_settings.php');
+$requestedCycleId = isset($_GET['cycle_id']) ? (string) $_GET['cycle_id'] : null;
+$settings = loadLifecycleSettings(__DIR__ . '/documents_life_cycle_settings.php', $requestedCycleId);
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 
@@ -32,12 +33,8 @@ try {
         }));
     }
 
+
     $relationTypeIds = parseIdList($_GET['relation_type_ids'] ?? '');
-    if (!$relationTypeIds && !empty($settings['relation_type_ids'])) {
-        $relationTypeIds = array_values(array_filter(array_map('intval', (array) $settings['relation_type_ids']), static function ($value) {
-            return $value > 0;
-        }));
-    }
 
     $stageLimit = isset($settings['max_auto_stage_count']) ? max(1, (int) $settings['max_auto_stage_count']) : 4;
 
@@ -99,6 +96,7 @@ try {
         'filters' => [
             'customer_id' => $customerId,
             'supplier_id' => $supplierId,
+            'cycle_id' => $settings['cycle_id'] ?? null,
         ],
         'stages' => $stageDefinitions,
         'customers' => $lifecycleData['customers'],
@@ -106,6 +104,13 @@ try {
             'total_customers' => count($lifecycleData['customers']),
             'total_cycles' => $lifecycleData['total_cycles'],
             'primary_documents' => count($primaryInvoiceIds),
+        ],
+        'cycle' => [
+            'id' => $settings['cycle_id'] ?? null,
+            'name' => $settings['cycle_name'] ?? null,
+            'available_cycles' => $settings['available_cycles'] ?? [],
+            'active_cycle_id' => $settings['active_cycle_id'] ?? null,
+            'stage_type_ids' => $settings['stage_type_ids'] ?? [],
         ],
         'lookups' => $lookups,
     ];
@@ -117,27 +122,178 @@ echo json_encode($response, JSON_UNESCAPED_UNICODE);
 
 $conn->close();
 
-function loadLifecycleSettings(string $settingsPath): array
+function loadLifecycleSettings(string $settingsPath, ?string $requestedCycleId = null): array
 {
     $defaults = [
         'stage_type_ids' => [],
         'stage_labels' => [],
-        'relation_type_ids' => [],
+
         'max_auto_stage_count' => 4,
     ];
 
-    if (is_file($settingsPath)) {
-        if (!defined('DOCUMENTS_LIFE_CYCLE_SETTINGS_ACCESS')) {
-            define('DOCUMENTS_LIFE_CYCLE_SETTINGS_ACCESS', true);
-        }
+    $rawConfig = loadRawLifecycleConfiguration($settingsPath);
 
-        $data = include $settingsPath;
-        if (is_array($data)) {
-            return array_merge($defaults, $data);
-        }
+    $cycles = $rawConfig['cycles'];
+    if (!$cycles) {
+        $cycles = [
+            'default' => [
+                'id' => 'default',
+                'name' => 'Default Cycle',
+                'stage_type_ids' => [],
+
+                'stage_labels' => [],
+                'max_auto_stage_count' => 4,
+            ],
+        ];
+        $rawConfig['active_cycle_id'] = 'default';
     }
 
-    return $defaults;
+    $activeId = $rawConfig['active_cycle_id'] ?? null;
+    $selectedId = $requestedCycleId !== null && isset($cycles[$requestedCycleId])
+        ? $requestedCycleId
+        : $activeId;
+
+    if (!$selectedId || !isset($cycles[$selectedId])) {
+        $selectedId = array_key_first($cycles);
+    }
+
+    $availableList = [];
+    foreach ($cycles as $cycleId => $cycleData) {
+        $cycleName = isset($cycleData['name']) && $cycleData['name'] !== ''
+            ? (string) $cycleData['name']
+            : $cycleId;
+        $cycles[$cycleId]['name'] = $cycleName;
+
+        $availableList[] = [
+            'id' => $cycleId,
+            'name' => $cycleName,
+            'is_selected' => $cycleId === $selectedId,
+            'is_active' => $cycleId === $activeId,
+        ];
+    }
+
+    $selectedCycle = $cycles[$selectedId];
+
+    $settings = array_merge($defaults, [
+        'stage_type_ids' => $selectedCycle['stage_type_ids'] ?? [],
+        'stage_labels' => $selectedCycle['stage_labels'] ?? [],
+        'max_auto_stage_count' => $selectedCycle['max_auto_stage_count'] ?? $defaults['max_auto_stage_count'],
+    ]);
+
+    $settings['cycle_id'] = $selectedId;
+    $settings['cycle_name'] = $selectedCycle['name'] ?? $selectedId;
+    $settings['available_cycles'] = $availableList;
+    $settings['active_cycle_id'] = $activeId ?? $selectedId;
+
+    return $settings;
+}
+
+
+function loadRawLifecycleConfiguration(string $settingsPath): array
+{
+    $defaults = [
+        'active_cycle_id' => 'default',
+        'cycles' => [
+            'default' => [
+                'id' => 'default',
+                'name' => 'Default Cycle',
+                'stage_type_ids' => [],
+
+                'stage_labels' => [],
+                'max_auto_stage_count' => 4,
+            ],
+        ],
+    ];
+
+    if (!is_file($settingsPath)) {
+        return $defaults;
+    }
+
+    if (!defined('DOCUMENTS_LIFE_CYCLE_SETTINGS_ACCESS')) {
+        define('DOCUMENTS_LIFE_CYCLE_SETTINGS_ACCESS', true);
+    }
+
+    $data = include $settingsPath;
+    if (!is_array($data)) {
+        return $defaults;
+    }
+
+    if (!isset($data['cycles']) || !is_array($data['cycles'])) {
+        $data = [
+            'active_cycle_id' => 'default',
+            'cycles' => [
+                'default' => array_merge($defaults['cycles']['default'], $data),
+            ],
+        ];
+    }
+
+    if (empty($data['cycles'])) {
+        $data['cycles'] = $defaults['cycles'];
+    }
+
+    foreach ($data['cycles'] as $key => &$cycle) {
+        if (!is_array($cycle)) {
+            $cycle = $defaults['cycles']['default'];
+        }
+
+        $cycleId = isset($cycle['id']) && $cycle['id'] !== ''
+            ? (string) $cycle['id']
+            : (is_string($key) && $key !== '' ? (string) $key : generateCycleId('cycle_' . $key));
+
+        $cycle['id'] = $cycleId;
+        $cycle['name'] = isset($cycle['name']) && $cycle['name'] !== '' ? (string) $cycle['name'] : $cycleId;
+        $cycle['stage_type_ids'] = normalizeOrderedIdList($cycle['stage_type_ids'] ?? []);
+        $cycle['stage_labels'] = normalizeLabelMap($cycle['stage_labels'] ?? []);
+        $cycle['max_auto_stage_count'] = isset($cycle['max_auto_stage_count'])
+            ? max(1, (int) $cycle['max_auto_stage_count'])
+            : $defaults['cycles']['default']['max_auto_stage_count'];
+    }
+    unset($cycle);
+
+    if (empty($data['active_cycle_id']) || !isset($data['cycles'][$data['active_cycle_id']])) {
+        $data['active_cycle_id'] = array_key_first($data['cycles']);
+    }
+
+    return $data;
+}
+
+function normalizeOrderedIdList($value): array
+{
+    $result = [];
+    foreach ((array) $value as $item) {
+        $id = (int) $item;
+        if ($id > 0 && !in_array($id, $result, true)) {
+            $result[] = $id;
+        }
+    }
+    return $result;
+}
+
+function normalizeLabelMap($value): array
+{
+    if (!is_array($value)) {
+        return [];
+    }
+
+    $result = [];
+    foreach ($value as $key => $label) {
+        $id = (int) $key;
+        if ($id > 0 && (is_string($label) || is_numeric($label))) {
+            $result[$id] = (string) $label;
+        }
+    }
+    return $result;
+}
+
+function generateCycleId(string $seed): string
+{
+    $seed = strtolower($seed);
+    $seed = preg_replace('/[^a-z0-9]+/', '_', $seed);
+    $seed = trim($seed, '_');
+    if ($seed === '') {
+        $seed = 'cycle';
+    }
+    return $seed;
 }
 
 function parseIdList($value): array
@@ -820,6 +976,8 @@ function loadLifecycleLookups(mysqli $conn): array
         'suppliers' => $suppliers,
     ];
 }
+
+
 
 
 

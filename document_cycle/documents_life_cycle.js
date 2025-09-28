@@ -1,21 +1,8 @@
-ï»¿(function () {
+(function () {
     'use strict';
 
-    const lifecycleSettings = window.lifecycleSettings || {};
-
-    const configuredStageTypeIds = Array.isArray(lifecycleSettings.stageTypeIds)
-        ? lifecycleSettings.stageTypeIds.filter(function (value) {
-            return value !== null && value !== undefined && value !== '';
-        }).map(String)
-        : [];
-
-    const configuredRelationTypeIds = Array.isArray(lifecycleSettings.relationTypeIds)
-        ? lifecycleSettings.relationTypeIds.filter(function (value) {
-            return value !== null && value !== undefined && value !== '';
-        }).map(String)
-        : [];
-
     const dom = {
+        cycleSelect: document.getElementById('cycle-select'),
         form: document.getElementById('filters-form'),
         dateFrom: document.getElementById('date-from'),
         dateTo: document.getElementById('date-to'),
@@ -38,6 +25,8 @@
     });
 
     let currentStages = [];
+    let currentCycleId = '';
+    let cycleOptions = [];
 
     function init() {
         initializeDateInputs();
@@ -67,6 +56,13 @@
         if (dom.form) {
             dom.form.addEventListener('submit', function (event) {
                 event.preventDefault();
+                fetchLifecycle();
+            });
+        }
+
+        if (dom.cycleSelect) {
+            dom.cycleSelect.addEventListener('change', function () {
+                currentCycleId = dom.cycleSelect.value || '';
                 fetchLifecycle();
             });
         }
@@ -129,11 +125,10 @@
         if (dom.supplierSelect && dom.supplierSelect.value) {
             params.set('supplier_id', dom.supplierSelect.value);
         }
-        if (configuredStageTypeIds.length) {
-            params.set('stage_type_ids', configuredStageTypeIds.join(','));
-        }
-        if (configuredRelationTypeIds.length) {
-            params.set('relation_type_ids', configuredRelationTypeIds.join(','));
+
+        const selectedCycleId = currentCycleId || (dom.cycleSelect && dom.cycleSelect.value ? dom.cycleSelect.value : '');
+        if (selectedCycleId) {
+            params.set('cycle_id', selectedCycleId);
         }
 
         return params;
@@ -208,6 +203,8 @@
                     throw new Error(data.error);
                 }
 
+                updateCycleSelect(data.cycle || {});
+
                 applyLookups(data.lookups || {});
                 currentStages = Array.isArray(data.stages) ? data.stages : [];
                 buildTableHeader(currentStages);
@@ -224,6 +221,78 @@
             });
     }
 
+    function updateCycleSelect(cycleData) {
+        if (!dom.cycleSelect) {
+            return;
+        }
+
+        const available = Array.isArray(cycleData.available_cycles) ? cycleData.available_cycles.slice() : [];
+        const previousValue = dom.cycleSelect.value || '';
+        const desiredValue = cycleData && cycleData.id ? String(cycleData.id) : currentCycleId;
+
+        dom.cycleSelect.innerHTML = '';
+
+        if (!available.length) {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'No document cycles available';
+            option.disabled = true;
+            option.selected = true;
+            dom.cycleSelect.appendChild(option);
+            dom.cycleSelect.disabled = true;
+            currentCycleId = '';
+            return;
+        }
+
+        dom.cycleSelect.disabled = false;
+
+        available.forEach(function (item) {
+            if (!item || item.id === undefined || item.id === null) {
+                return;
+            }
+
+            const id = String(item.id);
+            const option = document.createElement('option');
+            let label = item.name || ('Cycle ' + id);
+            if (item.is_active) {
+                label += ' (default)';
+            }
+            option.value = id;
+            option.textContent = label;
+            dom.cycleSelect.appendChild(option);
+        });
+
+        const optionValues = Array.prototype.map.call(dom.cycleSelect.options, function (option) {
+            return option.value;
+        });
+
+        let valueToSelect = '';
+
+        if (desiredValue && optionValues.includes(String(desiredValue))) {
+            valueToSelect = String(desiredValue);
+        } else if (previousValue && optionValues.includes(previousValue)) {
+            valueToSelect = previousValue;
+        } else {
+            const selectedFromServer = available.find(function (item) {
+                return item && item.is_selected && item.id !== undefined && item.id !== null;
+            });
+            if (selectedFromServer && optionValues.includes(String(selectedFromServer.id))) {
+                valueToSelect = String(selectedFromServer.id);
+            } else {
+                const active = available.find(function (item) {
+                    return item && item.is_active && item.id !== undefined && item.id !== null;
+                });
+                if (active && optionValues.includes(String(active.id))) {
+                    valueToSelect = String(active.id);
+                } else if (optionValues.length) {
+                    valueToSelect = optionValues[0];
+                }
+            }
+        }
+
+        dom.cycleSelect.value = valueToSelect;
+        currentCycleId = dom.cycleSelect.value || '';
+    }
     function applyLookups(lookups) {
         if (lookups.customers) {
             populateSelect(dom.customerSelect, lookups.customers, 'All customers', 'customer_id', 'customer_name');
@@ -272,7 +341,7 @@
 
         const customerTh = document.createElement('th');
         customerTh.className = 'customer-column';
-        customerTh.textContent = 'Ø§Ù„Ø¹Ù…ÙŠÙ„';
+        customerTh.textContent = 'ÇáÚãíá';
         dom.tableHeadRow.appendChild(customerTh);
 
         stages.forEach(function (stage, index) {
@@ -530,6 +599,15 @@
 
     init();
 })();
+
+
+
+
+
+
+
+
+
 
 
 

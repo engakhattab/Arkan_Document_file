@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
-
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دورة المستندات</title>
+    <title>Document Life Cycle</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
@@ -55,6 +54,18 @@
             margin: 0;
             color: var(--muted-text);
             font-size: 16px;
+        }
+
+        .settings-link {
+            display: inline-block;
+            margin-top: 10px;
+            color: var(--accent-color);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .settings-link:hover {
+            text-decoration: underline;
         }
 
         .filters-card {
@@ -128,59 +139,51 @@
 
         .quick-range {
             display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 8px;
         }
 
         .quick-range button {
-            padding: 8px 16px;
-            border-radius: 999px;
-            border: 1px solid transparent;
-            background: #eef4ff;
-            color: var(--accent-color);
+            padding: 10px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: #f9fbff;
+            font-size: 13px;
             cursor: pointer;
-            font-size: 14px;
         }
 
         .quick-range button:hover {
             border-color: var(--accent-color);
-            background: var(--accent-soft);
         }
 
         .summary-bar {
             display: flex;
+            gap: 16px;
             flex-wrap: wrap;
-            gap: 14px;
-            margin-bottom: 18px;
+            margin-bottom: 20px;
         }
 
         .summary-chip {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 16px 22px;
-            min-width: 190px;
             display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .summary-chip span {
-            color: var(--muted-text);
-            font-size: 13px;
+            gap: 12px;
+            align-items: baseline;
+            background: var(--card-bg);
+            padding: 12px 18px;
+            border-radius: 14px;
+            border: 1px solid var(--border-color);
+            font-size: 14px;
         }
 
         .summary-chip strong {
-            font-size: 20px;
-            font-weight: 700;
+            font-size: 18px;
+            color: var(--accent-color);
         }
 
         .table-card {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 18px;
-            padding: 0;
-            overflow: hidden;
+            padding: 20px;
         }
 
         .table-wrapper {
@@ -190,15 +193,13 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            direction: rtl;
-            min-width: 960px;
         }
 
         thead th {
             background: var(--table-head-bg);
             color: var(--table-head-text);
             text-align: center;
-            padding: 10px 12px;
+            padding: 14px 12px;
             font-size: 15px;
             font-weight: 700;
             border-bottom: 2px solid var(--border-color);
@@ -218,18 +219,6 @@
             background: var(--stage-color, rgba(16, 97, 215, 0.4));
         }
 
-        thead th .stage-head-title {
-            display: block;
-            font-size: 15px;
-            margin-bottom: 4px;
-        }
-
-        thead th .stage-head-meta {
-            font-size: 11px;
-            color: var(--muted-text);
-            font-weight: 500;
-        }
-
         tbody td {
             text-align: center;
             padding: 12px 10px;
@@ -244,80 +233,6 @@
 
         tbody tr:hover {
             background: var(--table-row-hover);
-        }
-
-        .stage-cell {
-            text-align: center;
-        }
-
-        .stage-cell-content {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            align-items: center;
-        }
-
-        .stage-line {
-            display: flex;
-            gap: 6px;
-            align-items: baseline;
-        }
-
-        .stage-line span {
-            font-size: 12px;
-            color: var(--muted-text);
-        }
-
-        .stage-line strong {
-            font-size: 15px;
-            color: var(--text-color);
-        }
-
-        .table-empty {
-            padding: 28px;
-            text-align: center;
-            font-size: 15px;
-            color: var(--muted-text);
-        }
-
-        .table-empty.danger {
-            color: var(--danger-text);
-            background: #fff5f5;
-        }
-
-        .last-updated {
-            margin-top: 18px;
-            color: var(--muted-text);
-            font-size: 13px;
-            text-align: left;
-        }
-
-        @media (max-width: 768px) {
-            .filters-card {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .filters-card form {
-                flex-direction: column;
-            }
-
-            .input-group {
-                width: 100%;
-            }
-
-            .form-actions {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .form-actions button {
-                width: 100%;
-            }
-        }
-
-        tbody td {
-            border-bottom: 1px solid var(--border-color);
         }
 
         .customer-cell {
@@ -384,47 +299,91 @@
         .doc-link {
             white-space: nowrap;
         }
+
+        .table-empty {
+            padding: 28px;
+            text-align: center;
+            font-size: 15px;
+            color: var(--muted-text);
+        }
+
+        .last-updated {
+            margin-top: 18px;
+            color: var(--muted-text);
+            font-size: 13px;
+            text-align: left;
+        }
+
+        @media (max-width: 768px) {
+            .filters-card {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filters-card form {
+                flex-direction: column;
+            }
+
+            .input-group {
+                width: 100%;
+            }
+
+            .form-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .form-actions button {
+                width: 100%;
+            }
+        }
     </style>
 </head>
-
 <body>
     <div class="page-shell">
         <header>
-            <h1>دورة المستندات</h1>
-
+            <h1>Document Life Cycle</h1>
+            <p>Track how documents move between stages for each customer.</p>
+            <a class="settings-link" href="documents_life_cycle_settings.html">Manage document cycles</a>
         </header>
 
         <section class="filters-card">
             <form id="filters-form">
                 <div class="input-group">
-                    <label for="date-from">التاريخ من</label>
+                    <label for="cycle-select">Document cycle</label>
+                    <select id="cycle-select" name="cycle_id">
+                        <option value="">Select a cycle</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="date-from">From date</label>
                     <input type="date" id="date-from" name="date_from">
                 </div>
                 <div class="input-group">
-                    <label for="date-to">التاريخ الى</label>
+                    <label for="date-to">To date</label>
                     <input type="date" id="date-to" name="date_to">
                 </div>
                 <div class="input-group">
-                    <label for="customer-select">العميل</label>
+                    <label for="customer-select">Customer</label>
                     <select id="customer-select" name="customer_id">
-                        <option value="">كل العملاء</option>
+                        <option value="">All customers</option>
                     </select>
                 </div>
                 <div class="input-group">
-                    <label for="supplier-select">المورد</label>
+                    <label for="supplier-select">Supplier</label>
                     <select id="supplier-select" name="supplier_id">
-                        <option value="">كل الموردين</option>
+                        <option value="">All suppliers</option>
                     </select>
                 </div>
                 <div class="form-actions">
-                    <button type="submit" class="btn-primary">تحديث</button>
-                    <button type="button" id="reset-filters" class="btn-secondary">اعادة تعيين</button>
+                    <button type="submit" class="btn-primary">Apply filters</button>
+                    <button type="button" id="reset-filters" class="btn-secondary">Clear filters</button>
                 </div>
             </form>
             <div class="quick-range">
-                <button type="button" data-range="today">هذا اليوم</button>
-                <button type="button" data-range="week">هذا الاسبوع</button>
-                <button type="button" data-range="month">هذا الشهر</button>
+                <button type="button" data-range="today">Today</button>
+                <button type="button" data-range="week">This week</button>
+                <button type="button" data-range="month">This month</button>
             </div>
         </section>
 
@@ -447,15 +406,7 @@
 
     <script>
         window.lifecycleSettings = window.lifecycleSettings || {};
-        // Example: window.lifecycleSettings.stageTypeIds = [101, 205, 301];
-        // Example: window.lifecycleSettings.relationTypeIds = [2];
     </script>
     <script src="documents_life_cycle.js"></script>
 </body>
-
 </html>
-
-
-
-
-

@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Cycle Settings</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f5f7fb;
+            --card-bg: #ffffff;
+            --accent-color: #1061d7;
+            --accent-soft: rgba(16, 97, 215, 0.08);
+            --border-color: #d7e0ef;
+            --text-color: #1f2937;
+            --muted-text: #6b7280;
+            --danger-text: #b91c1c;
+            --success-text: #0f5132;
+            --success-soft: #d1fae5;
+            --danger-soft: #fee2e2;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Cairo', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        .page-shell {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 20px 48px;
+        }
+
+        header {
+            margin-bottom: 24px;
+        }
+
+        header h1 {
+            margin: 0 0 8px;
+            font-size: 30px;
+            font-weight: 700;
+        }
+
+        header p {
+            margin: 0 0 12px;
+            color: var(--muted-text);
+            font-size: 15px;
+        }
+
+        .back-link {
+            display: inline-block;
+            color: var(--accent-color);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .settings-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 24px;
+        }
+
+        .settings-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 24px;
+        }
+
+        .cycle-list-panel {
+            border-right: 1px solid var(--border-color);
+            padding-right: 20px;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .panel-header h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .cycle-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .cycle-list-empty {
+            color: var(--muted-text);
+            text-align: center;
+            padding: 18px;
+            border: 1px dashed var(--border-color);
+            border-radius: 12px;
+            background: #f9fbff;
+        }
+
+        .cycle-item-button {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: #f9fbff;
+            text-align: left;
+            font-size: 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+
+        .cycle-list-item.is-selected .cycle-item-button {
+            border-color: var(--accent-color);
+            background: var(--accent-soft);
+        }
+
+        .cycle-list-item.is-active .cycle-item-button::before {
+            content: '*';
+            color: var(--accent-color);
+        }
+
+        .cycle-item-button:hover {
+            border-color: var(--accent-color);
+        }
+
+        .cycle-badge {
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: var(--accent-soft);
+            color: var(--accent-color);
+        }
+
+        .cycle-form-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 18px;
+        }
+
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-field label {
+            font-size: 13px;
+            color: var(--muted-text);
+        }
+
+        .form-field input,
+        .form-field select {
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: #f9fbff;
+            font-size: 14px;
+        }
+
+        .stage-builder {
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px;
+            background: #f9fbff;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .stage-builder h3 {
+            margin: 0;
+            font-size: 17px;
+        }
+
+        .stage-picker {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .stage-picker select {
+            flex: 1;
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: #fff;
+        }
+
+        .stage-picker button {
+            padding: 8px 14px;
+            border-radius: 10px;
+            border: none;
+            background: var(--accent-color);
+            color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        #selected-stages {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .stage-item {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 10px 12px;
+        }
+
+        .stage-name {
+            font-weight: 600;
+            min-width: 140px;
+        }
+
+        .stage-label-input {
+            flex: 1;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .stage-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .stage-actions button {
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: #fff;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .stage-empty {
+            text-align: center;
+            color: var(--muted-text);
+            padding: 16px;
+            border: 1px dashed var(--border-color);
+            border-radius: 12px;
+            background: #fff;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .form-actions button {
+            padding: 10px 18px;
+            border-radius: 12px;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: var(--accent-color);
+            color: #fff;
+        }
+
+        .btn-secondary {
+            background: #e8eefb;
+            color: var(--accent-color);
+        }
+
+        .btn-danger {
+            background: #fee2e2;
+            color: var(--danger-text);
+        }
+
+        .form-actions button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .settings-status {
+            min-height: 24px;
+            font-size: 14px;
+        }
+
+        .settings-status.is-success {
+            color: var(--success-text);
+            background: var(--success-soft);
+            padding: 10px 12px;
+            border-radius: 10px;
+        }
+
+        .settings-status.is-error {
+            color: var(--danger-text);
+            background: var(--danger-soft);
+            padding: 10px 12px;
+            border-radius: 10px;
+        }
+
+        @media (max-width: 920px) {
+            .settings-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .cycle-list-panel {
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                padding-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-shell">
+        <header>
+            <h1>Document Cycle Settings</h1>
+            <p>Create multiple document cycles, control their stage order, and choose a default cycle.</p>
+            <a class="back-link" href="documents_life_cycle.html">Back to Document Life Cycle</a>
+        </header>
+
+        <section class="settings-card">
+            <div class="settings-layout">
+                <aside class="cycle-list-panel">
+                    <div class="panel-header">
+                        <h2>Cycles</h2>
+                        <button type="button" id="add-cycle" class="btn-secondary">New cycle</button>
+                    </div>
+                    <ul id="cycle-list" class="cycle-list"></ul>
+                </aside>
+
+                <div class="cycle-form-panel">
+                    <form id="cycle-form">
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="cycle-name">Cycle name</label>
+                                <input type="text" id="cycle-name" placeholder="e.g. Purchase to Sale" required>
+                            </div>
+                            <div class="form-field">
+                                <label for="max-stage-count">Fallback stage count</label>
+                                <input type="number" id="max-stage-count" min="1" value="4">
+                            </div>
+                        </div>
+
+                        <div class="stage-builder">
+                            <h3>Stage order</h3>
+                            <div class="stage-picker">
+                                <select id="available-stage-types"></select>
+                                <button type="button" id="add-stage">Add stage</button>
+                            </div>
+                            <ul id="selected-stages"></ul>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary">Save cycle</button>
+                            <button type="button" id="set-active" class="btn-secondary">Set as default</button>
+                            <button type="button" id="delete-cycle" class="btn-danger">Delete cycle</button>
+                        </div>
+                    </form>
+                    <div id="settings-status" class="settings-status"></div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="documents_life_cycle_settings.js"></script>
+</body>
+</html>
